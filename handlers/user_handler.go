@@ -1,0 +1,62 @@
+package handlers
+
+import (
+	"kan-uygulamasi/models"
+	"kan-uygulamasi/services"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+type LoginInput struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+func LoginUser(c *gin.Context) {
+	var input LoginInput
+
+	//1. json verisini alıp Go structına çeviriyoruz (Binding).
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format or missing required fields", "details": err.Error()})
+		return
+	}
+
+	//2. işlemi service katmanına gönderiyoruz
+	token, err := services.LoginUser(input.Email, input.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password", "details": err.Error()})
+		return
+	}
+
+	//3. başarılı ise tokenı kullanıcıya gönderiyoz
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+		"token":   token,
+	})
+}
+
+// CreateUser, yeni bir kullanıcı oluşturmak için HTTP POST isteğini işler.
+func CreateUser(c *gin.Context) {
+	var user models.User
+
+	//1. ADIM: Client'tan gelen JSON verisini alıp Go structına çeviriyoruz (Binding).
+	if err := c.ShouldBindJSON(&user); err != nil {
+		//Eğer JSON formatı bozuksa veya zorunlu (not null) alanlar eksikse, hata döndürüyoruz.
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format or missing required fields", "details": err.Error()})
+		return
+	}
+
+	//2. ADIM : Service 'e gidip veritabanına kaydetme işlemini yapıyoruz.
+	if err := services.CreateUser(&user); err != nil {
+		//Eğer veritabanına kaydetme sırasında bir hata oluşursa, hata döndürüyoruz.
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create user", "details": err.Error()})
+		return
+	}
+
+	//3. ADIM : Başarılı bir şekilde kaydedildiyse, başarılı mesajı ve oluşturulan kullanıcıyı döndürüyoruz.
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "User created successfully",
+		"user":    user, //oluşan kullanıcıyı IDsi ve tarihleri ile birlikte geri döndürüyoruz
+	})
+}
