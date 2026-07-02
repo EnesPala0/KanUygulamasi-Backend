@@ -27,11 +27,13 @@ Projeyi yerel ortamınızda çalıştırmak için bilgisayarınızda **Docker** 
    cd KanUygulamasi-Backend
 
 2. **Sistemi Ayağa Kaldırın:**
-PostgreSQL veritabanını ve gerekli tüm altyapıyı Docker üzerinden başlatmak için:
-docker-compose up -d
+    PostgreSQL veritabanını ve gerekli tüm altyapıyı Docker üzerinden başlatmak için:
+    ```bash
+    docker-compose up -d
 
-Uygulamayı Çalıştırın:
-go run .   
+    Uygulamayı Çalıştırın:
+    ```bash
+    go run .   
 
 HTTP Metodu,Endpoint,Açıklama,Yetki Gereksinimi
 POST,/api/users,Yeni kullanıcı kaydı oluşturur,Herkese Açık
