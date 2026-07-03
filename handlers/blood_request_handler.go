@@ -34,16 +34,22 @@ func CreateBloodRequest(c *gin.Context) {
 }
 
 func GetAllBloodRequests(c *gin.Context) {
-	// URL'deki "?city=İstanbul" kısmındaki "İstanbul" metnini yakalıyoruz
-	city := c.Query("city")
+	var filter services.BloodRequestFilter
 
-	//yakaladağımız şehir parametresini service katmanına gönderiyoruz
-	requests, err := services.GetAllBloodRequests(city)
+	//urldeki ?city=...&district=...&blood_type=...&urgency_level=... parametrelerini alıyoruz
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid query parameters", "details": err.Error()})
+		return
+	}
+
+	//doldurulmuş filtreyi service katmanına gönderiyoruz
+	requests, err := services.GetAllBloodRequests(filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve blood requests", "details": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"blood_requests": requests})
+
 }
 
 // İlanın detay sayfasına tıklandıgında, ilan ID'si ile birlikte bu fonksiyon çağrılır ve ilgili ilanı getirir.

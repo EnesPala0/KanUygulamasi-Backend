@@ -5,6 +5,13 @@ import (
 	"kan-uygulamasi/models"
 )
 
+type BloodRequestFilter struct {
+	City      string `form:"city"`
+	District  string `form:"district"`
+	BloodType string `form:"blood_type"`
+	Urgency   string `form:"urgency_level"`
+}
+
 // CreateBloodRequest, yeni bir kan talebi oluşturur ve veritabanına kaydeder.
 func CreateBloodRequest(bloodRequest *models.BloodRequest) error {
 
@@ -14,16 +21,26 @@ func CreateBloodRequest(bloodRequest *models.BloodRequest) error {
 	return err
 }
 
-// GetAllBloodRequests, gelen şehir parametresine göre kan taleplerini listeler veya tümünü getirir.
-func GetAllBloodRequests(city string) ([]models.BloodRequest, error) {
+// GetAllBloodRequests, tek tek string yerine filtre paketimizi struct olarak alıyoruz
+func GetAllBloodRequests(filter BloodRequestFilter) ([]models.BloodRequest, error) {
 	var requests []models.BloodRequest
 
 	// Preload("User") sayesinde, her ilanın içine o ilanı açan kullanıcının bilgilerini gömüyoruz!
 	query := database.DB.Preload("User")
 
-	// Eğer garson bize bir şehir gönderdiyse (parametre boş değilse) filtreyi uygula
-	if city != "" {
-		query = query.Where("city = ?", city)
+	//---DİNAMİK SORGULAR---
+	//eğeer structın içindeki dğerler boş değilse o filtreyi WHERE şartı olarak SQL e ekliyoruz
+	if filter.City != "" {
+		query = query.Where("city = ?", filter.City)
+	}
+	if filter.District != "" {
+		query = query.Where("district = ?", filter.District)
+	}
+	if filter.BloodType != "" {
+		query = query.Where("required_blood_type = ?", filter.BloodType)
+	}
+	if filter.Urgency != "" {
+		query = query.Where("urgency_level = ?", filter.Urgency)
 	}
 
 	// Sorguyu çalıştır ve sonuçları requests dizisine aktar
