@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"kan-uygulamasi/models"
 	"kan-uygulamasi/services"
 	"net/http"
@@ -59,4 +60,40 @@ func CreateUser(c *gin.Context) {
 		"message": "User created successfully",
 		"user":    user, //oluşan kullanıcıyı IDsi ve tarihleri ile birlikte geri döndürüyoruz
 	})
+}
+
+func UpdateUser(c *gin.Context) {
+	//1. URL'den guncellenmek istenen kullanıcının idsini alalım
+	paramID := c.Param("id")
+
+	//2. Middlewareden gelen sisteme giriş yapmış kullanıcıının idsini al
+	tokenUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	//JWT içindeki sayılar Goya float64 olarak gelir
+	//urlden gelen id ise stringdir. Karşılaştırabilmek için token idsini stringe çeviriyoruz
+	tokenIDStr := fmt.Sprintf("%.0f", tokenUserID)
+
+	//3. yetki kontrolu yapıyoruz. Eğer token içindeki kullanıcı ids ile url'den gelen id aynı değilse yetkisiz erişim hatası döndürüyoruz
+	if paramID != tokenIDStr {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: You can only update your own profile"})
+		return
+	}
+
+	//4. JSON verisini al
+	var input services.UpdateUserInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format or missing required fields", "details": err.Error()})
+		return
+	}
+
+	//5. service katmanına gidip veritabanında güncelleme işlemini yapıyoruz
+	if err := services.UpdateUserProfile(paramID, input); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user profile", "details": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "User profile updated successfully"})
 }

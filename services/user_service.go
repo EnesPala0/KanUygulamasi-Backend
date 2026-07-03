@@ -13,6 +13,13 @@ import (
 	"gorm.io/gorm"
 )
 
+type UpdateUserInput struct {
+	Phone     string `json:"phone"`
+	City      string `json:"city"`
+	District  string `json:"district"`
+	BloodType string `json:"blood_type"`
+}
+
 func CreateUser(user *models.User) error {
 	var existingUser models.User
 
@@ -70,4 +77,24 @@ func LoginUser(email, password string) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func UpdateUserProfile(userID string, input UpdateUserInput) error {
+	var user models.User
+
+	//1. kullanıcıyı veritabanında buluyoruz
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		return errors.New("user not found")
+	}
+
+	//2. gelen verilerle kullanıcının bilgilerini güncelle
+	//GORM un Updates metodu ile sadece içi dolu olan alanları güncelleyebiliriz. Boş alanlar güncellenmez.
+	err := database.DB.Model(&user).Updates(models.User{
+		Phone:     input.Phone,
+		City:      input.City,
+		District:  input.District,
+		BloodType: input.BloodType,
+	}).Error
+
+	return err
 }
