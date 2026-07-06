@@ -49,3 +49,44 @@ func GetVolunteersByBloodRequestID(bloodRequestID string) ([]models.Volunteer, e
 
 	return volunteers, err
 }
+
+func AcceptVolunteer(volunteerID string, loggedUserID uint) error {
+	var volunteer models.Volunteer
+
+	//1. başvuruyu bul ve ilanı getir
+	err := database.DB.Preload("BloodRequest").First(&volunteer, volunteerID).Error
+	if err != nil {
+		return errors.New("volunteer not found")
+	}
+
+	//2. başvurunun ilanının sahibi mi diye kontrol et
+	if volunteer.BloodRequest.UserId != loggedUserID {
+		return errors.New("you are not authorized to accept this volunteer")
+	}
+
+	//3. transaction başlat
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	//4. başvuru durumunu güncelle
+	volunteer.Status = "accepted"
+	if err := tx.Save(&volunteer).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	//5. ilan durumunu güncelliyoruz
+	volunteer.BloodRequest.Status = "resolved"
+	if err := tx.Save(&volunteer.BloodRequest).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	//6. islemi onaylıyoruz
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+	return nil
+}

@@ -70,5 +70,4 @@ func GetVolunteers(c *gin.Context) {
 		"message":    "Volunteers retrieved successfully",
 		"volunteers": volunteers,
 	})
-
 }
