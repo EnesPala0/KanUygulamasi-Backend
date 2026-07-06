@@ -28,6 +28,7 @@ func SetupRoutes(router *gin.Engine) {
 			protected.PUT("/blood-requests/:id", handlers.UpdateBloodRequest)
 			protected.DELETE("/blood-requests/:id", handlers.DeleteBloodRequest)
 			protected.PUT("/users/:id", handlers.UpdateUser)
+			protected.POST("/volunteers", handlers.CreateVolunteer)
 		}
 	}
 }
