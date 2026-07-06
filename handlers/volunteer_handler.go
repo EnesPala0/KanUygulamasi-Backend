@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"kan-uygulamasi/database"
 	"kan-uygulamasi/models"
 	"kan-uygulamasi/services"
 	"net/http"
@@ -31,6 +32,43 @@ func CreateVolunteer(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"message":   "Volunteer created successfully",
 		"volunteer": volunteer,
+	})
+}
+
+func GetVolunteers(c *gin.Context) {
+	bloodRequestID := c.Param("id")
+
+	tokenUserID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
+		return
+	}
+
+	//tokendan gelen float64 tipli id yi tam sayıya uint e çeviriyoruz
+	loggedUserID := uint(tokenUserID.(float64))
+
+	//ilanın sahibi mi diye kontrol ediyoruz
+	var bloodRequest models.BloodRequest
+
+	if err := database.DB.First(&bloodRequest, bloodRequestID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Blood request not found", "details": err.Error()})
+		return
+	}
+
+	if bloodRequest.UserId != loggedUserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not authorized to view volunteers for this blood request"})
+		return
+	}
+
+	volunteers, err := services.GetVolunteersByBloodRequestID(bloodRequestID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve volunteers", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Volunteers retrieved successfully",
+		"volunteers": volunteers,
 	})
 
 }

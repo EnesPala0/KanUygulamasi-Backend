@@ -42,3 +42,10 @@ func CreateVolunteer(volunteer *models.Volunteer) error {
 	//başvuru başarılı ise veritabanına kaydediyoruz
 	return database.DB.Create(volunteer).Error
 }
+
+func GetVolunteersByBloodRequestID(bloodRequestID string) ([]models.Volunteer, error) {
+	var volunteers []models.Volunteer
+	err := database.DB.Preload("User").Where("blood_request_id = ?", bloodRequestID).Find(&volunteers).Error
+
+	return volunteers, err
+}
