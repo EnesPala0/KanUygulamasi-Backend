@@ -90,3 +90,10 @@ func AcceptVolunteer(volunteerID string, loggedUserID uint) error {
 	}
 	return nil
 }
+
+func GetMyApplications(userID uint) ([]models.Volunteer, error) {
+	var applications []models.Volunteer
+
+	err := database.DB.Preload("BloodRequest").Where("user_id = ?", userID).Find(&applications).Error
+	return applications, err
+}

@@ -93,3 +93,24 @@ func AcceptVolunteer(c *gin.Context) {
 	})
 
 }
+
+func GetMyApplications(c *gin.Context) {
+	tokenUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
+		return
+	}
+
+	loggedUserID := uint(tokenUserID.(float64))
+
+	applications, err := services.GetMyApplications(loggedUserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve your applications", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":      "Successfully retrieved your applications",
+		"applications": applications,
+	})
+}
