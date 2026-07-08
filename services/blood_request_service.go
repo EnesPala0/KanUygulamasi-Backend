@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"kan-uygulamasi/database"
 	"kan-uygulamasi/models"
 )
@@ -94,4 +95,31 @@ func GetMyBloodRequests(userID uint) ([]models.BloodRequest, error) {
 	var requests []models.BloodRequest
 	err := database.DB.Where("user_id = ?", userID).Find(&requests).Error
 	return requests, err
+}
+
+func CompleteBloodRequest(requestID string, loggedUserID uint) error {
+	var request models.BloodRequest
+
+	//1. ilanı veritabanından buuluyoruz
+	if err := database.DB.First(&request, requestID).Error; err != nil {
+		return err
+	}
+
+	//2. ilanın sahibi ile giriş yapan kullanıcının ID'sini karşılaştırıyoruz
+	if request.UserId != loggedUserID {
+		return errors.New("unauthorized: only the owner can complete the request")
+	}
+
+	//3. ilan zaten kapalıysa boşuna işlem yapma
+	if request.Status == "resolved" {
+		return errors.New("request is already completed")
+	}
+
+	//4. ilanı kapatıyoruz
+	request.Status = "resolved"
+	if err := database.DB.Save(&request).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

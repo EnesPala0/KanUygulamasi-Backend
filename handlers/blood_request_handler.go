@@ -124,3 +124,24 @@ func GetMyBloodRequests(c *gin.Context) {
 		"blood_requests": requests,
 	})
 }
+
+func CompleteBloodRequest(c *gin.Context) {
+	requestID := c.Param("id")
+
+	tokenUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
+		return
+	}
+
+	loggedUserID := uint(tokenUserID.(float64))
+
+	err := services.CompleteBloodRequest(requestID, loggedUserID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to complete the blood request", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Blood request completed successfully"})
+
+}

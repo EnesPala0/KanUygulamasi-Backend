@@ -34,7 +34,7 @@ func SetupRoutes(router *gin.Engine) {
 			protected.GET("/my-blood-requests", handlers.GetMyBloodRequests)
 			protected.GET("/my-applications", handlers.GetMyApplications)
 			protected.PUT("/volunteers/:id/reject", handlers.RejectVolunteer)
-
+			protected.PUT("/blood-requests/:id/complete", handlers.CompleteBloodRequest)
 		}
 	}
 }
