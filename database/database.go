@@ -44,7 +44,7 @@ func ConnectDB() {
 	//tabloları veritabanına otomatik olarak yansıtıyoruz
 	log.Println("Models are being migrated...")
 
-	err = DB.AutoMigrate(&models.User{}, &models.BloodRequest{}, &models.Volunteer{})
+	err = DB.AutoMigrate(&models.User{}, &models.BloodRequest{}, &models.Volunteer{}, &models.Notification{})
 	if err != nil {
 		log.Fatal("Failed to migrate models! Error: \n", err)
 	}
