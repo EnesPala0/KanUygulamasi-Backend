@@ -18,6 +18,7 @@ func CreateNotification(userID uint, title, message string) error {
 func GetMyNotifications(userID uint) ([]models.Notification, error) {
 	var notifications []models.Notification
 
+	//burada desc ile sıralama yapıyoruz azalan şekilde yani en son gelen bildirim en üstte olacak şekilde
 	err := database.DB.Where("user_id = ?", userID).Order("created_at desc").Find(&notifications).Error
 	return notifications, err
 }
