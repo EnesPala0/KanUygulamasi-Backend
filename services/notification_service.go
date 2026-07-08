@@ -21,3 +21,8 @@ func GetMyNotifications(userID uint) ([]models.Notification, error) {
 	err := database.DB.Where("user_id = ?", userID).Order("created_at desc").Find(&notifications).Error
 	return notifications, err
 }
+
+func MarkAsRead(notificationID string, userID uint) error {
+	return database.DB.Model(&models.Notification{}).Where("id = ? AND user_id = ?", notificationID, userID).Update("is_read", true).Error
+
+}
