@@ -97,3 +97,22 @@ func GetMyApplications(userID uint) ([]models.Volunteer, error) {
 	err := database.DB.Preload("BloodRequest").Where("user_id = ?", userID).Find(&applications).Error
 	return applications, err
 }
+
+func RejectVolunteer(volunteerID string, loggedUserID uint) error {
+	var volunteer models.Volunteer
+	//1. başvuruyu bul ve ilanı getir
+	if err := database.DB.Preload("BloodRequest").First(&volunteer, volunteerID).Error; err != nil {
+		return errors.New("application not found")
+	}
+
+	if volunteer.BloodRequest.UserId != loggedUserID {
+		return errors.New("you are not authorized to reject this application")
+	}
+
+	volunteer.Status = "rejected"
+	if err := database.DB.Save(&volunteer).Error; err != nil {
+		return errors.New("failed to reject the application")
+	}
+
+	return nil
+}
