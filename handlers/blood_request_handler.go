@@ -103,3 +103,24 @@ func DeleteBloodRequest(c *gin.Context) {
 		"message": "The blood request was deleted successfully (Soft Delete applied).",
 	})
 }
+
+func GetMyBloodRequests(c *gin.Context) {
+	tokenUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
+		return
+	}
+
+	loggedUserID := uint(tokenUserID.(float64))
+
+	requests, err := services.GetMyBloodRequests(loggedUserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve your blood requests", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "Successfully retrieved your blood requests",
+		"blood_requests": requests,
+	})
+}

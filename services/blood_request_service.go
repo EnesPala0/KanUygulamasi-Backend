@@ -89,3 +89,9 @@ func DeleteBloodRequest(id string) error {
 	err = database.DB.Delete(&request).Error
 	return err
 }
+
+func GetMyBloodRequests(userID uint) ([]models.BloodRequest, error) {
+	var requests []models.BloodRequest
+	err := database.DB.Where("user_id = ?", userID).Find(&requests).Error
+	return requests, err
+}
