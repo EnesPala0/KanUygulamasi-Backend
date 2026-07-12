@@ -25,3 +25,22 @@ func GetMyNotifications(c *gin.Context) {
 		"data": notifications,
 	})
 }
+
+func MarkAsRead(c *gin.Context) {
+	notificationID := c.Param("id")
+	tokenUserID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userID := uint(tokenUserID.(float64))
+
+	if err := services.MarkAsRead(notificationID, userID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Notification could not updated."})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Notification mark as read.",
+	})
+}
