@@ -71,7 +71,15 @@ func UpdateBloodRequest(id string, updatedData *models.BloodRequest) (models.Blo
 	}
 
 	//gelen verilerle eski ilanı güncelliyoruz
-	err = database.DB.Model(&currentRequest).Updates(updatedData).Error
+	err = database.DB.Model(&currentRequest).Select(
+		"City",
+		"District",
+		"HospitalName",
+		"RequiredBloodType",
+		"RequiredUnits",
+		"UrgencyLevel",
+	).Updates(updatedData).Error
+
 	if err != nil {
 		return currentRequest, err
 	}
@@ -93,7 +101,7 @@ func DeleteBloodRequest(id string) error {
 
 func GetMyBloodRequests(userID uint) ([]models.BloodRequest, error) {
 	var requests []models.BloodRequest
-	err := database.DB.Where("user_id = ?", userID).Find(&requests).Error
+	err := database.DB.Preload("User").Where("user_id = ?", userID).Find(&requests).Error
 	return requests, err
 }
 
