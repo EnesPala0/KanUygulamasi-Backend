@@ -40,7 +40,18 @@ func CreateVolunteer(volunteer *models.Volunteer) error {
 	}
 
 	//başvuru başarılı ise veritabanına kaydediyoruz
-	return database.DB.Create(volunteer).Error
+	if err := database.DB.Create(volunteer).Error; err != nil {
+		return err
+	}
+
+	CreateNotification(
+		bloodRequest.UserId,
+		"New Volunteer Application",
+		"You have a new volunteer application for your blood request. Check it out!",
+	)
+
+	return nil
+
 }
 
 func GetVolunteersByBloodRequestID(bloodRequestID string) ([]models.Volunteer, error) {
@@ -88,6 +99,12 @@ func AcceptVolunteer(volunteerID string, loggedUserID uint) error {
 	if err := tx.Commit().Error; err != nil {
 		return err
 	}
+
+	CreateNotification(
+		volunteer.UserID,
+		"Your volunteer Application Accepted",
+		"Thank you for your blood support!. Please contact the blood request owner for further details.",
+	)
 	return nil
 }
 
@@ -113,6 +130,12 @@ func RejectVolunteer(volunteerID string, loggedUserID uint) error {
 	if err := database.DB.Save(&volunteer).Error; err != nil {
 		return errors.New("failed to reject the application")
 	}
+
+	CreateNotification(
+		volunteer.UserID,
+		"Your volunteer Application Rejected",
+		"Unfortunately, your volunteer application has been rejected. We appreciate your willingness to help.",
+	)
 
 	return nil
 }
