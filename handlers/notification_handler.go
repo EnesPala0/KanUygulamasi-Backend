@@ -28,7 +28,7 @@ func GetMyNotifications(c *gin.Context) {
 
 func MarkAsRead(c *gin.Context) {
 	notificationID := c.Param("id")
-	tokenUserID, exists := c.Get("userID")
+	tokenUserID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
