@@ -8,6 +8,6 @@ type Volunteer struct {
 	UserID         uint   `gorm:"not null" json:"volunteer_id"`
 	Status         string `gorm:"not null;default:'pending'" json:"status"`
 	// GORM İLİŞKİLERİ:
-	User         User         `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user"`
-	BloodRequest BloodRequest `gorm:"foreignKey:BloodRequestID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"blood_request"`
+	User         User          `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user"`
+	BloodRequest *BloodRequest `gorm:"foreignKey:BloodRequestID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"blood_request,omitempty"`
 }

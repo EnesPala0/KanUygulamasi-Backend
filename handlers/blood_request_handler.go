@@ -12,24 +12,36 @@ import (
 func CreateBloodRequest(c *gin.Context) {
 	var request models.BloodRequest
 
-	//1. ADIM: Client'tan gelen JSON verisini alıp Go structına çeviriyoruz (Binding).
+	// 1. ADIM: Client'tan gelen JSON verisini alıp Go structına çeviriyoruz (Binding).
 	if err := c.ShouldBindJSON(&request); err != nil {
-		//Eğer JSON formatı bozuksa veya zorunlu (not null) alanlar eksikse, hata döndürüyoruz.
+		// Eğer JSON formatı bozuksa veya zorunlu (not null) alanlar eksikse, hata döndürüyoruz.
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format or missing required fields", "details": err.Error()})
 		return
 	}
 
-	//2.ADIM : Service 'e gidip veritabanına kaydetme işlemini yapıyoruz.
+	// --- İŞTE EKLENEN KRİTİK KISIM ---
+	// 1.5 ADIM: Auth Middleware'den gelen kullanıcı ID'sini alıp ilana ekliyoruz
+	tokenUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
+		return
+	}
+
+	// Token'dan gelen ID'yi uint'e çevirip struct'ın UserId alanına atıyoruz
+	request.UserId = uint(tokenUserID.(float64))
+	// ---------------------------------
+
+	// 2.ADIM : Service 'e gidip veritabanına kaydetme işlemini yapıyoruz.
 	if err := services.CreateBloodRequest(&request); err != nil {
-		//Eğer veritabanına kaydetme sırasında bir hata oluşursa, hata döndürüyoruz.
+		// Eğer veritabanına kaydetme sırasında bir hata oluşursa, hata döndürüyoruz.
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create blood request", "details": err.Error()})
 		return
 	}
 
-	//3.ADIM : Başarılı bir şekilde kaydedildiyse, başarılı mesajı ve oluşturulan kan talebini döndürüyoruz.
+	// 3.ADIM : Başarılı bir şekilde kaydedildiyse, başarılı mesajı ve oluşturulan kan talebini döndürüyoruz.
 	c.JSON(http.StatusCreated, gin.H{
 		"message":       "Blood request created successfully",
-		"blood_request": request, //oluşan ilanı IDsi ve tarihleri ile birlikte geri döndürüyoruz
+		"blood_request": request, // oluşan ilanı ID'si ve tarihleri ile birlikte geri döndürüyoruz
 	})
 }
 

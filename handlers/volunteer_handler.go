@@ -16,7 +16,7 @@ func CreateVolunteer(c *gin.Context) {
 		return
 	}
 
-	tokenUserID, exists := c.Get("userID")
+	tokenUserID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
 		return
@@ -38,7 +38,7 @@ func CreateVolunteer(c *gin.Context) {
 func GetVolunteers(c *gin.Context) {
 	bloodRequestID := c.Param("id")
 
-	tokenUserID, exists := c.Get("userID")
+	tokenUserID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
 		return
