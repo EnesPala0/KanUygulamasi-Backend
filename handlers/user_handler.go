@@ -9,6 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type RegisterRequest struct {
+	FirstName string `json:"first_name" binding:"required"`
+	LastName  string `json:"last_name" binding:"required"`
+	Email     string `json:"email" binding:"required"`
+	Password  string `json:"password" binding:"required"`
+	Phone     string `json:"phone" binding:"required"`
+	BloodType string `json:"blood_type" binding:"required"`
+	City      string `json:"city" binding:"required"`
+	District  string `json:"district" binding:"required"`
+}
+
 type LoginInput struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
@@ -39,26 +50,40 @@ func LoginUser(c *gin.Context) {
 
 // CreateUser, yeni bir kullanıcı oluşturmak için HTTP POST isteğini işler.
 func CreateUser(c *gin.Context) {
-	var user models.User
+	var req RegisterRequest
 
-	//1. ADIM: Client'tan gelen JSON verisini alıp Go structına çeviriyoruz (Binding).
-	if err := c.ShouldBindJSON(&user); err != nil {
-		//Eğer JSON formatı bozuksa veya zorunlu (not null) alanlar eksikse, hata döndürüyoruz.
+	// 1. ADIM: Client'tan gelen JSON verisini alıp DTO struct'ına çeviriyoruz.
+	if err := c.ShouldBindJSON(&req); err != nil {
+		// Eğer JSON formatı bozuksa veya zorunlu alanlar eksikse, hata döndürüyoruz.
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format or missing required fields", "details": err.Error()})
 		return
 	}
 
-	//2. ADIM : Service 'e gidip veritabanına kaydetme işlemini yapıyoruz.
+	// 1.5 ADIM: DTO'daki verileri gerçek Veritabanı modelimize (models.User) aktarıyoruz.
+	user := models.User{
+		Name:      req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+		Password:  req.Password, // GÜVENLİK NOTU: services.CreateUser içinde bu şifreyi bcrypt ile hash'lediğinden emin ol!
+		Phone:     req.Phone,
+		BloodType: req.BloodType,
+		City:      req.City,
+		District:  req.District,
+	}
+
+	// 2. ADIM: Service'e gidip veritabanına kaydetme işlemini yapıyoruz.
+	// Service katmanı artık içi dolu, şifresi okunmuş 'user' modelini alıp işleyecek.
 	if err := services.CreateUser(&user); err != nil {
-		//Eğer veritabanına kaydetme sırasında bir hata oluşursa, hata döndürüyoruz.
+		// Eğer veritabanına kaydetme sırasında bir hata oluşursa, hata döndürüyoruz.
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create user", "details": err.Error()})
 		return
 	}
 
-	//3. ADIM : Başarılı bir şekilde kaydedildiyse, başarılı mesajı ve oluşturulan kullanıcıyı döndürüyoruz.
+	// 3. ADIM: Başarılı bir şekilde kaydedildiyse, başarılı mesajı ve oluşturulan kullanıcıyı döndürüyoruz.
+	// NOT: models.User içindeki Password alanında json:"-" olduğu için, burada user'ı döndürsek bile şifre dışarı sızmayacak. Kusursuz güvenlik!
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "User created successfully",
-		"user":    user, //oluşan kullanıcıyı IDsi ve tarihleri ile birlikte geri döndürüyoruz
+		"user":    user, // oluşan kullanıcıyı ID'si ve tarihleri ile birlikte geri döndürüyoruz
 	})
 }
 
