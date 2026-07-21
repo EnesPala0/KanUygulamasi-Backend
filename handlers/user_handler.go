@@ -122,3 +122,23 @@ func UpdateUser(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "User profile updated successfully"})
 }
+
+func GetMe(c *gin.Context) {
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(401, gin.H{"error": "Yetkisiz işlem"})
+		return
+	}
+
+	// Arayüzü uint'e çeviriyoruz
+	userID := uint(userIDInterface.(float64))
+
+	// Servisi çağır
+	user, err := services.GetUserByID(userID)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "Kullanıcı bulunamadı"})
+		return
+	}
+
+	c.JSON(200, user)
+}

@@ -48,6 +48,7 @@ func SetupRoutes(router *gin.Engine) {
 			protected.PUT("/blood-requests/:id/complete", handlers.CompleteBloodRequest)
 			protected.GET("/notifications", handlers.GetMyNotifications)
 			protected.PUT("/notifications/:id/read", handlers.MarkAsRead)
+			protected.GET("/me", handlers.GetMe)
 		}
 	}
 }

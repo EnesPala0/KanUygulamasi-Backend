@@ -98,3 +98,11 @@ func UpdateUserProfile(userID string, input UpdateUserInput) error {
 
 	return err
 }
+
+func GetUserByID(id uint) (*models.User, error) {
+	var user models.User
+	if err := database.DB.First(&user, id).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
