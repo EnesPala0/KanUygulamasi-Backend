@@ -106,3 +106,11 @@ func GetUserByID(id uint) (*models.User, error) {
 	}
 	return &user, nil
 }
+
+func GetUserByEmail(email string) (*models.User, error) {
+	var user models.User
+	if err := database.DB.Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

@@ -142,3 +142,25 @@ func GetMe(c *gin.Context) {
 
 	c.JSON(200, user)
 }
+
+type ForgotPasswordInput struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+func ForgotPassword(c *gin.Context) {
+	var input ForgotPasswordInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Lütfen geçerli bir e-posta adresi giriniz."})
+		return
+	}
+
+	user, err := services.GetUserByEmail(input.Email)
+	if err != nil || user == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Bu e-posta adresiyle kayıtlı bir hesap bulunamadı."})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Şifre sıfırlama talimatları e-posta adresinize iletildi. Lütfen gelen kutunuzu kontrol ediniz.",
+	})
+}

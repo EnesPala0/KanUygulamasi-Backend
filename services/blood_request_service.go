@@ -2,8 +2,11 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"kan-uygulamasi/database"
 	"kan-uygulamasi/models"
+
+	"gorm.io/gorm"
 )
 
 type BloodRequestFilter struct {
@@ -144,6 +147,28 @@ func CompleteBloodRequest(requestID string, loggedUserID uint) error {
 	//4. ilanı kapatıyoruz
 	if err := database.DB.Model(&request).Update("status", "resolved").Error; err != nil {
 		return err
+	}
+
+	//5. Bu ilana başvurmuş ve "approved" (Onaylandı) durumunda olan gönüllüleri bulup sayaçlarını artırıyoruz!
+	var approvedVolunteers []models.Volunteer
+	if err := database.DB.Where("blood_request_id = ? AND status IN ?", request.ID, []string{"approved", "accepted", "onaylandı", "kabul"}).Find(&approvedVolunteers).Error; err == nil {
+		units := request.RequiredUnits
+		if units <= 0 {
+			units = 1
+		}
+		for _, vol := range approvedVolunteers {
+			database.DB.Model(&models.User{}).Where("id = ?", vol.UserID).
+				Updates(map[string]interface{}{
+					"saved_lives":     gorm.Expr("saved_lives + ?", units),
+					"total_donations": gorm.Expr("total_donations + ?", units),
+					"streak_years":    gorm.Expr("CASE WHEN streak_years = 0 THEN 1 ELSE streak_years END"),
+				})
+			CreateNotification(
+				vol.UserID,
+				"🏁 Harika Bir İş Başardınız!",
+				fmt.Sprintf("Destek olduğunuz kan talebi başarıyla tamamlandı. Toplam %d ünite kan bağışı ile %d hayat kurtardınız! Sonsuz teşekkürler. ❤️", units, units),
+			)
+		}
 	}
 
 	return nil

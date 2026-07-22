@@ -24,6 +24,7 @@ func SetupRoutes(router *gin.Engine) {
 		// --- HERKESE AÇIK ROTALAR (Token gerektirmez) ---
 		api.POST("/users", handlers.CreateUser)
 		api.POST("/login", handlers.LoginUser) // Fonksiyon ismini 'Login' olarak varsayıyorum
+		api.POST("/forgot-password", handlers.ForgotPassword)
 
 		// İlanları listeleme herkese açık olabilir
 		api.GET("/blood-requests", handlers.GetAllBloodRequests)
