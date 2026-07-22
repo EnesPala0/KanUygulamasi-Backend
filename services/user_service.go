@@ -14,6 +14,8 @@ import (
 )
 
 type UpdateUserInput struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 	Phone     string `json:"phone"`
 	City      string `json:"city"`
 	District  string `json:"district"`
@@ -88,14 +90,27 @@ func UpdateUserProfile(userID string, input UpdateUserInput) error {
 	}
 
 	//2. gelen verilerle kullanıcının bilgilerini güncelle
-	//GORM un Updates metodu ile sadece içi dolu olan alanları güncelleyebiliriz. Boş alanlar güncellenmez.
-	err := database.DB.Model(&user).Updates(models.User{
-		Phone:     input.Phone,
-		City:      input.City,
-		District:  input.District,
-		BloodType: input.BloodType,
-	}).Error
+	updates := map[string]interface{}{}
+	if input.FirstName != "" {
+		updates["name"] = input.FirstName
+	}
+	if input.LastName != "" {
+		updates["last_name"] = input.LastName
+	}
+	if input.Phone != "" {
+		updates["phone"] = input.Phone
+	}
+	if input.City != "" {
+		updates["city"] = input.City
+	}
+	if input.District != "" {
+		updates["district"] = input.District
+	}
+	if input.BloodType != "" {
+		updates["blood_type"] = input.BloodType
+	}
 
+	err := database.DB.Model(&user).Updates(updates).Error
 	return err
 }
 
@@ -113,4 +128,24 @@ func GetUserByEmail(email string) (*models.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func ChangePassword(userID uint, oldPassword, newPassword string) error {
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		return errors.New("kullanıcı bulunamadı")
+	}
+
+	// Eski şifre kontrolü
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+		return errors.New("mevcut şifreniz hatalı")
+	}
+
+	// Yeni şifreyi hashle
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("şifre hashlenirken hata oluştu: %v", err)
+	}
+
+	return database.DB.Model(&user).Update("password", string(hashedPassword)).Error
 }

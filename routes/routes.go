@@ -39,6 +39,7 @@ func SetupRoutes(router *gin.Engine) {
 			protected.POST("/blood-requests", handlers.CreateBloodRequest)
 			protected.PUT("/blood-requests/:id", handlers.UpdateBloodRequest)
 			protected.DELETE("/blood-requests/:id", handlers.DeleteBloodRequest)
+			protected.PUT("/users/change-password", handlers.ChangeUserPassword)
 			protected.PUT("/users/:id", handlers.UpdateUser)
 			protected.POST("/volunteers", handlers.CreateVolunteer)
 			protected.DELETE("/volunteers/:id", handlers.DeleteVolunteer)

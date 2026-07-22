@@ -164,3 +164,30 @@ func ForgotPassword(c *gin.Context) {
 		"message": "Şifre sıfırlama talimatları e-posta adresinize iletildi. Lütfen gelen kutunuzu kontrol ediniz.",
 	})
 }
+
+type ChangePasswordInput struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required"`
+}
+
+func ChangeUserPassword(c *gin.Context) {
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Yetkisiz işlem"})
+		return
+	}
+	userID := uint(userIDInterface.(float64))
+
+	var input ChangePasswordInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Lütfen mevcut ve yeni şifrenizi giriniz."})
+		return
+	}
+
+	if err := services.ChangePassword(userID, input.OldPassword, input.NewPassword); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Şifreniz başarıyla güncellendi."})
+}

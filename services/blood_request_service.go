@@ -96,6 +96,9 @@ func UpdateBloodRequest(id string, updatedData *models.BloodRequest) (models.Blo
 	if updatedData.Status != "" {
 		updates["status"] = updatedData.Status
 	}
+	if updatedData.MedicalNote != "" {
+		updates["medical_note"] = updatedData.MedicalNote
+	}
 
 	err = database.DB.Model(&currentRequest).Updates(updates).Error
 	if err != nil {
@@ -116,6 +119,10 @@ func DeleteBloodRequest(id string) error {
 	if err != nil {
 		return err
 	}
+
+	// İlana bağlı olan tüm gönüllü başvurularını da temizle (Cascade soft-delete)
+	database.DB.Where("blood_request_id = ?", request.ID).Delete(&models.Volunteer{})
+
 	err = database.DB.Delete(&request).Error
 	return err
 }
