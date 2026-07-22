@@ -4,6 +4,7 @@ import (
 	"errors"
 	"kan-uygulamasi/database"
 	"kan-uygulamasi/models"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -16,7 +17,8 @@ func CreateVolunteer(volunteer *models.Volunteer) error {
 		return err
 	}
 	//ilanın statusu "active" mi diye kontrol ediyoruz
-	if bloodRequest.Status != "active" {
+	statusLower := strings.ToLower(strings.TrimSpace(bloodRequest.Status))
+	if statusLower != "active" && statusLower != "aktif" && statusLower != "açık" && statusLower != "yayında" && statusLower != "" {
 		return errors.New("blood request is not active")
 	}
 
@@ -82,15 +84,13 @@ func AcceptVolunteer(volunteerID string, loggedUserID uint) error {
 	}
 
 	//4. başvuru durumunu güncelle
-	volunteer.Status = "accepted"
-	if err := tx.Save(&volunteer).Error; err != nil {
+	if err := tx.Model(&volunteer).Update("status", "accepted").Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	//5. ilan durumunu güncelliyoruz
-	volunteer.BloodRequest.Status = "resolved"
-	if err := tx.Save(&volunteer.BloodRequest).Error; err != nil {
+	if err := tx.Model(volunteer.BloodRequest).Update("status", "resolved").Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -126,8 +126,7 @@ func RejectVolunteer(volunteerID string, loggedUserID uint) error {
 		return errors.New("you are not authorized to reject this application")
 	}
 
-	volunteer.Status = "rejected"
-	if err := database.DB.Save(&volunteer).Error; err != nil {
+	if err := database.DB.Model(&volunteer).Update("status", "rejected").Error; err != nil {
 		return errors.New("failed to reject the application")
 	}
 
@@ -139,3 +138,23 @@ func RejectVolunteer(volunteerID string, loggedUserID uint) error {
 
 	return nil
 }
+
+func DeleteVolunteer(volunteerID string, loggedUserID uint) error {
+	var volunteer models.Volunteer
+	if err := database.DB.First(&volunteer, volunteerID).Error; err != nil {
+		return errors.New("volunteer application not found")
+	}
+	if volunteer.UserID != loggedUserID {
+		return errors.New("you can only cancel your own applications")
+	}
+	return database.DB.Unscoped().Delete(&volunteer).Error
+}
+
+func DeleteVolunteerByRequestID(requestID string, loggedUserID uint) error {
+	var volunteer models.Volunteer
+	if err := database.DB.Where("blood_request_id = ? AND user_id = ?", requestID, loggedUserID).First(&volunteer).Error; err != nil {
+		return errors.New("volunteer application not found")
+	}
+	return database.DB.Unscoped().Delete(&volunteer).Error
+}
+

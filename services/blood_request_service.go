@@ -70,19 +70,37 @@ func UpdateBloodRequest(id string, updatedData *models.BloodRequest) (models.Blo
 		return currentRequest, err
 	}
 
-	//gelen verilerle eski ilanı güncelliyoruz
-	err = database.DB.Model(&currentRequest).Select(
-		"City",
-		"District",
-		"HospitalName",
-		"RequiredBloodType",
-		"RequiredUnits",
-		"UrgencyLevel",
-	).Updates(updatedData).Error
+	// Sadece dolu gelen (boş/sıfır olmayan) alanları güncelleyelim ki diğer alanlar sıfırlanmasın/bozulmasın
+	updates := make(map[string]interface{})
+	if updatedData.City != "" {
+		updates["city"] = updatedData.City
+	}
+	if updatedData.District != "" {
+		updates["district"] = updatedData.District
+	}
+	if updatedData.HospitalName != "" {
+		updates["hospital_name"] = updatedData.HospitalName
+	}
+	if updatedData.RequiredBloodType != "" {
+		updates["required_blood_type"] = updatedData.RequiredBloodType
+	}
+	if updatedData.RequiredUnits != 0 {
+		updates["required_units"] = updatedData.RequiredUnits
+	}
+	if updatedData.UrgencyLevel != "" {
+		updates["urgency_level"] = updatedData.UrgencyLevel
+	}
+	if updatedData.Status != "" {
+		updates["status"] = updatedData.Status
+	}
 
+	err = database.DB.Model(&currentRequest).Updates(updates).Error
 	if err != nil {
 		return currentRequest, err
 	}
+
+	// En güncel halini tekrar veritabanından çekip dönelim
+	database.DB.Preload("User").First(&currentRequest, id)
 	return currentRequest, nil
 }
 
@@ -118,14 +136,13 @@ func CompleteBloodRequest(requestID string, loggedUserID uint) error {
 		return errors.New("unauthorized: only the owner can complete the request")
 	}
 
-	//3. ilan zaten kapalıysa boşuna işlem yapma
-	if request.Status == "resolved" {
-		return errors.New("request is already completed")
+	//3. ilan zaten kapalıysa boşuna hata dönme, başarılı say (idempotent)
+	if request.Status == "resolved" || request.Status == "Tamamlandı" || request.Status == "completed" {
+		return nil
 	}
 
 	//4. ilanı kapatıyoruz
-	request.Status = "resolved"
-	if err := database.DB.Save(&request).Error; err != nil {
+	if err := database.DB.Model(&request).Update("status", "resolved").Error; err != nil {
 		return err
 	}
 

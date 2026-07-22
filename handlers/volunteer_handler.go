@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"kan-uygulamasi/database"
 	"kan-uygulamasi/models"
 	"kan-uygulamasi/services"
@@ -134,5 +135,59 @@ func RejectVolunteer(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Volunteer rejected successfully",
 	})
-
 }
+
+func DeleteVolunteer(c *gin.Context) {
+	volunteerID := c.Param("id")
+	tokenUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
+		return
+	}
+	loggedUserID := uint(tokenUserID.(float64))
+
+	if err := services.DeleteVolunteer(volunteerID, loggedUserID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to delete volunteer application", "details": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Volunteer application canceled successfully"})
+}
+
+func DeleteVolunteerByBody(c *gin.Context) {
+	var payload struct {
+		RequestID uint `json:"request_id"`
+	}
+	if err := c.ShouldBindJSON(&payload); err != nil || payload.RequestID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format or missing request_id"})
+		return
+	}
+	tokenUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
+		return
+	}
+	loggedUserID := uint(tokenUserID.(float64))
+
+	if err := services.DeleteVolunteerByRequestID(fmt.Sprint(payload.RequestID), loggedUserID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to cancel application", "details": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Application canceled successfully"})
+}
+
+func DeleteVolunteerByRequest(c *gin.Context) {
+	requestID := c.Param("id")
+	tokenUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
+		return
+	}
+	loggedUserID := uint(tokenUserID.(float64))
+
+	if err := services.DeleteVolunteerByRequestID(requestID, loggedUserID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to cancel application", "details": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Application canceled successfully"})
+}
+
