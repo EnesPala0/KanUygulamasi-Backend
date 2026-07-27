@@ -45,6 +45,9 @@ func ConnectDB() {
 	log.Println("Models are being migrated...")
 
 	err = DB.AutoMigrate(&models.User{}, &models.BloodRequest{}, &models.Volunteer{}, &models.Notification{})
+	DB.Exec("CREATE EXTENSION IF NOT EXISTS cube;")
+	DB.Exec("CREATE EXTENSION IF NOT EXISTS earthdistance;")
+
 	if err != nil {
 		log.Fatal("Failed to migrate models! Error: \n", err)
 	}
