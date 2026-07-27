@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"kan-uygulamasi/database"
 	"kan-uygulamasi/models"
 	"kan-uygulamasi/services"
 	"net/http"
@@ -23,6 +24,42 @@ type RegisterRequest struct {
 type LoginInput struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
+}
+
+type LocationUpdateRequest struct {
+	Latitude      float64 `json:"latitude"`
+	Longitude     float64 `json:"longitude"`
+	ExpoPushToken string  `json:"expo_push_token"`
+}
+
+func UpdateUserLocation(c *gin.Context) {
+	//burada tokendan giriş yapan kişiinin ID sini alıyoruz
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(401, gin.H{"error": "yetkisiz işlem"})
+		return
+	}
+	userID := uint(userIDInterface.(float64))
+
+	//react nativeden gelen verileri okuıyoruz
+	var req LocationUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": "geçersiz veri formati"})
+		return
+	}
+
+	//veritabanında (GORM ile) sadece bu 3 alanı güncelliyoruz
+	if err := database.DB.Model(&models.User{}).Where("id = ?", userID).Updates(models.User{
+		Latitude:      req.Latitude,
+		Longitude:     req.Longitude,
+		ExpoPushToken: req.ExpoPushToken,
+	}).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Veritabanı güncellenemedi"})
+		return
+	}
+
+	//basarılı yanıt döndürüuoruz
+	c.JSON(200, gin.H{"message": "konum bilgileri basarıyla kaydedildi"})
 }
 
 func LoginUser(c *gin.Context) {
