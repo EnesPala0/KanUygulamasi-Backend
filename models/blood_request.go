@@ -15,4 +15,6 @@ type BloodRequest struct {
 	Status            string      `gorm:"not null; default:'active'" json:"status"`
 	MedicalNote       string      `json:"medical_note"`
 	Volunteers        []Volunteer `gorm:"foreignKey:BloodRequestID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"volunteers"`
+	Latitude          float64     `json:"latitude"`
+	Longitude         float64     `json:"longitude"`
 }
