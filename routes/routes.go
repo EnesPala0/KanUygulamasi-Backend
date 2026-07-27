@@ -55,6 +55,7 @@ func SetupRoutes(router *gin.Engine) {
 			protected.GET("/notifications", handlers.GetMyNotifications)
 			protected.PUT("/notifications/:id/read", handlers.MarkAsRead)
 			protected.GET("/me", handlers.GetMe)
+			protected.PUT("/user/location", handlers.UpdateUserLocation)
 		}
 	}
 }
