@@ -31,7 +31,11 @@ func CreateBloodRequest(c *gin.Context) {
 
 	// Token'dan gelen ID'yi uint'e çevirip struct'ın UserId alanına atıyoruz
 	request.UserId = uint(tokenUserID.(float64))
-	// ---------------------------------
+
+	var currentUser models.User
+	database.DB.Select("latitude", "longitude").Where("id = ?", request.UserId).First(&currentUser)
+	request.Latitude = currentUser.Latitude
+	request.Longitude = currentUser.Longitude
 
 	// 2.ADIM : Service 'e gidip veritabanına kaydetme işlemini yapıyoruz.
 	if err := services.CreateBloodRequest(&request); err != nil {

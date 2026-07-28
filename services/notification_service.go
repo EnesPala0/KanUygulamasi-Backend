@@ -97,6 +97,6 @@ func SendPushNotification(tokens []string, title, message string, extraData map[
 		return fmt.Errorf("Expo beklenmeyen bir yanıt döndü, Durum Kodu: %d", resp.StatusCode)
 	}
 
-	fmt.Printf("🚀 Başarılı! %d adet cihaza Expo üzerinden bildirim fırlatıldı.\n", len(messages))
+	fmt.Printf("Başarılı! %d adet cihaza Expo üzerinden bildirim fırlatıldı.\n", len(messages))
 	return nil
 }
