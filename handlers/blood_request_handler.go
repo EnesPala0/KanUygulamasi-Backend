@@ -74,7 +74,7 @@ func CreateBloodRequest(c *gin.Context) {
 			// (Opsiyonel ama mükemmel detay) Veritabanına da bildirim ekle
 			// Böylece adam push bildirimi yanlışlıkla silse bile uygulamaya girince zilde görür
 			bildirimMesaji := fmt.Sprintf("%s şehrinde Acil %s kan aranıyor!", req.City, req.RequiredBloodType)
-			services.CreateNotification(user.ID, "Acil Kan İhtiyacı", bildirimMesaji)
+			services.CreateNotification(user.ID, "urgent_need", "Acil Kan İhtiyacı 🩸", bildirimMesaji, req.ID)
 		}
 
 		// 2. Eğer listede token varsa, Expo füzelerini ateşle!

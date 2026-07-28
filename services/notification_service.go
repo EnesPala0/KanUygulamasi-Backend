@@ -9,11 +9,13 @@ import (
 	"net/http"
 )
 
-func CreateNotification(userID uint, title, message string) error {
+func CreateNotification(userID uint, notifType, title, message string, bloodReqID uint) error {
 	notification := models.Notification{
-		UserID:  userID,
-		Title:   title,
-		Message: message,
+		UserID:         userID,
+		Type:           notifType,
+		BloodRequestID: bloodReqID,
+		Title:          title,
+		Message:        message,
 	}
 
 	return database.DB.Create(&notification).Error

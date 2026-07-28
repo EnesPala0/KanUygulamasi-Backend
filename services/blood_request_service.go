@@ -172,8 +172,10 @@ func CompleteBloodRequest(requestID string, loggedUserID uint) error {
 				})
 			CreateNotification(
 				vol.UserID,
-				"🏁 Harika Bir İş Başardınız!",
+				"completed",
+				"Harika Bir İş Başardınız!",
 				fmt.Sprintf("Destek olduğunuz kan talebi başarıyla tamamlandı. Toplam %d ünite kan bağışı ile %d hayat kurtardınız! Sonsuz teşekkürler. ❤️", units, units),
+				request.ID,
 			)
 		}
 	}
