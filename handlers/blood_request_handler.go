@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+	"kan-uygulamasi/database"
 	"kan-uygulamasi/models"
 	"kan-uygulamasi/services"
 	"net/http"
@@ -37,6 +39,30 @@ func CreateBloodRequest(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create blood request", "details": err.Error()})
 		return
 	}
+
+	//go func() ile işlemi arka plana atıyhoruz böyle API anında yanıt döner
+	go func(req models.BloodRequest) {
+		var nearbyUsers []models.User
+
+		// GORM ve Earthdistance ile 100.000 metre (100 km) çapındaki kullanıcıları bulma
+		err := database.DB.Where("earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(?, ?)) <= ?",
+			req.Latitude, req.Longitude, 100000). // İlanın açıldığı koordinat ve 100 km sınırı
+			Where("expo_push_token != ''").       // Bildirim token'ı olanları (uygulamaya girenleri) filtrele
+			Where("id != ?", req.UserId).         // İlanı açan kişinin KENDİSİNE bildirim gitmesini engelle
+			Find(&nearbyUsers).Error
+
+		if err != nil {
+			fmt.Printf("Radar araması sırasında hata oluştu: %v\n", err)
+			return
+		}
+
+		fmt.Printf("RADAR: %s şehrinde açılan ilana 100 km çapında %d adet uygun kullanıcı bulundu!\n", req.City, len(nearbyUsers))
+
+		// Geçici Loglama (Adım 3'te buraya Expo HTTP isteğini yazacağız)
+		for _, user := range nearbyUsers {
+			fmt.Printf("   -> %s adlı kullanıcı hedeflendi (Token: %s)\n", user.Name, user.ExpoPushToken)
+		}
+	}(request)
 
 	// 3.ADIM : Başarılı bir şekilde kaydedildiyse, başarılı mesajı ve oluşturulan kan talebini döndürüyoruz.
 	c.JSON(http.StatusCreated, gin.H{
