@@ -1,8 +1,12 @@
 package services
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"kan-uygulamasi/database"
 	"kan-uygulamasi/models"
+	"net/http"
 )
 
 func CreateNotification(userID uint, title, message string) error {
@@ -26,4 +30,73 @@ func GetMyNotifications(userID uint) ([]models.Notification, error) {
 func MarkAsRead(notificationID string, userID uint) error {
 	return database.DB.Model(&models.Notification{}).Where("id = ? AND user_id = ?", notificationID, userID).Update("is_read", true).Error
 
+}
+
+// ExpoPushMessage, Expo'nun bizden beklediği standart JSON formatıdır
+type ExpoPushMessage struct {
+	To    string                 `json:"to"`
+	Sound string                 `json:"sound"`
+	Title string                 `json:"title"`
+	Body  string                 `json:"body"`
+	Data  map[string]interface{} `json:"data,omitempty"`
+}
+
+// SendPushNotification, elimizdeki token listesine toplu şekilde bildirim fırlatır
+func SendPushNotification(tokens []string, title, message string, extraData map[string]interface{}) error {
+	// Eğer token listesi boşsa hiç işlem yapmadan çık
+	if len(tokens) == 0 {
+		return nil
+	}
+
+	// 1. Gönderilecek mesaj paketlerini hazırlıyoruz
+	var messages []ExpoPushMessage
+	for _, token := range tokens {
+		// Sadece geçerli, boş olmayan token'ları ekliyoruz
+		if token != "" {
+			messages = append(messages, ExpoPushMessage{
+				To:    token,
+				Sound: "default", // Telefondaki varsayılan bildirim sesini çaldırır
+				Title: title,
+				Body:  message,
+				Data:  extraData, // Tıklandığında ilana gitmesi için ilan ID'si gibi veriler
+			})
+		}
+	}
+
+	// Hazırlanan paket kalmadıysa çık
+	if len(messages) == 0 {
+		return nil
+	}
+
+	// 2. Mesajları JSON formatına çeviriyoruz
+	jsonBytes, err := json.Marshal(messages)
+	if err != nil {
+		return fmt.Errorf("JSON oluşturma hatası: %v", err)
+	}
+
+	// 3. Expo'nun Bildirim Merkezine HTTP POST isteği oluşturuyoruz
+	req, err := http.NewRequest("POST", "https://exp.host/--/api/v2/push/send", bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return fmt.Errorf("HTTP istek oluşturma hatası: %v", err)
+	}
+
+	// Expo'nun zorunlu tuttuğu başlıklar (Headers)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept-Encoding", "gzip, deflate")
+	req.Header.Set("Content-Type", "application/json")
+
+	// 4. İsteği Ateşle!
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Expo'ya istek atılamadı: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Expo beklenmeyen bir yanıt döndü, Durum Kodu: %d", resp.StatusCode)
+	}
+
+	fmt.Printf("🚀 Başarılı! %d adet cihaza Expo üzerinden bildirim fırlatıldı.\n", len(messages))
+	return nil
 }

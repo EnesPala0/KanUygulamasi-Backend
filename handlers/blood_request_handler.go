@@ -58,10 +58,40 @@ func CreateBloodRequest(c *gin.Context) {
 
 		fmt.Printf("RADAR: %s şehrinde açılan ilana 100 km çapında %d adet uygun kullanıcı bulundu!\n", req.City, len(nearbyUsers))
 
-		// Geçici Loglama (Adım 3'te buraya Expo HTTP isteğini yazacağız)
+		var tokens []string
+
+		// 1. Bulunan kullanıcıların token'larını bir listeye topluyoruz
+		// Aynı zamanda uygulamanın içindeki "Çan" ikonuna (veritabanına) da kaydediyoruz
 		for _, user := range nearbyUsers {
-			fmt.Printf("   -> %s adlı kullanıcı hedeflendi (Token: %s)\n", user.Name, user.ExpoPushToken)
+			if user.ExpoPushToken != "" {
+				tokens = append(tokens, user.ExpoPushToken)
+			}
+
+			// (Opsiyonel ama mükemmel detay) Veritabanına da bildirim ekle
+			// Böylece adam push bildirimi yanlışlıkla silse bile uygulamaya girince zilde görür
+			bildirimMesaji := fmt.Sprintf("%s şehrinde Acil %s kan aranıyor!", req.City, req.RequiredBloodType)
+			services.CreateNotification(user.ID, "Acil Kan İhtiyacı", bildirimMesaji)
 		}
+
+		// 2. Eğer listede token varsa, Expo füzelerini ateşle!
+		if len(tokens) > 0 {
+			baslik := "Acil Kan İhtiyacı!"
+			mesaj := fmt.Sprintf("%s civarında %s kana ihtiyaç var. Destek olabilir misin?", req.City, req.RequiredBloodType)
+
+			// Kullanıcı bildirime tıkladığında onu direkt ilana yönlendirmek için gizli veri
+			ekstraVeri := map[string]interface{}{
+				"blood_request_id": req.ID,
+				"type":             "new_request",
+			}
+
+			err := services.SendPushNotification(tokens, baslik, mesaj, ekstraVeri)
+			if err != nil {
+				fmt.Printf("Bildirimler fırlatılamadı: %v\n", err)
+			} else {
+				fmt.Printf("BİLDİRİM OPERASYONU BAŞARILI! %d telefona mesaj gönderildi.\n", len(tokens))
+			}
+		}
+
 	}(request)
 
 	// 3.ADIM : Başarılı bir şekilde kaydedildiyse, başarılı mesajı ve oluşturulan kan talebini döndürüyoruz.
