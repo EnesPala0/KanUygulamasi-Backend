@@ -10,6 +10,7 @@ import (
 )
 
 func CreateNotification(userID uint, notifType, title, message string, bloodReqID uint) error {
+	// 1. Bildirimi veritabanına (uygulama içi zile) kaydet
 	notification := models.Notification{
 		UserID:         userID,
 		Type:           notifType,
@@ -18,7 +19,38 @@ func CreateNotification(userID uint, notifType, title, message string, bloodReqI
 		Message:        message,
 	}
 
-	return database.DB.Create(&notification).Error
+	if err := database.DB.Create(&notification).Error; err != nil {
+		return err
+	}
+
+	// 2. Eğer bu bildirim "urgent_need" (100km radar) ise işlemi burada kes!
+	// Neden? Çünkü Handler dosyasında biz zaten bu işlemi "toplu bildirim" (bulk) olarak yapıyoruz.
+	// Çift bildirim gitmesini engellemek için bunu atlıyoruz.
+	if notifType == "urgent_need" {
+		return nil
+	}
+
+	// 3. Diğer TÜM bildirimler için (Başvuru, Onay, Red, Tamamlandı) anında telefona füze yolla!
+	// Go rutin ile arka plana atıyoruz ki kullanıcıyı bekletmesin.
+	go func(uID uint, nType, nTitle, nMsg string, reqID uint) {
+		var user models.User
+
+		// Bildirimin gideceği kullanıcının veritabanından Expo Token'ını alıyoruz
+		if err := database.DB.Select("expo_push_token").Where("id = ?", uID).First(&user).Error; err == nil {
+			if user.ExpoPushToken != "" {
+				// Bildirime tıklandığında RN tarafında ilan detayına gitmesi için gizli ID paketi
+				extraData := map[string]interface{}{
+					"blood_request_id": reqID,
+					"type":             nType,
+				}
+
+				// Tek kişilik hedefli Expo füzesini ateşle!
+				SendPushNotification([]string{user.ExpoPushToken}, nTitle, nMsg, extraData)
+			}
+		}
+	}(userID, notifType, title, message, bloodReqID)
+
+	return nil
 }
 
 func GetMyNotifications(userID uint) ([]models.Notification, error) {
