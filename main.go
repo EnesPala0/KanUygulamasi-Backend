@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"kan-uygulamasi/database"
 	"kan-uygulamasi/routes"
+	"kan-uygulamasi/services"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,9 @@ func main() {
 
 	//1. burada veritabanı bağlantısını başlatıyoruz
 	database.ConnectDB()
+
+	// Arka planda 7 günlük ilanları otomatik kapatan servisi başlat
+	go services.StartBloodRequestCleanup()
 
 	//2. Gin HTTP sunucusunu varsayılan ayarlarla başlatıyoruz
 	router := gin.Default()
