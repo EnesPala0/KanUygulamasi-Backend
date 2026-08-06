@@ -170,7 +170,21 @@ func DeleteUser(userID uint) error {
 		"longitude":       0,
 	})
 
-	// 3. GORM ile Soft Delete İşlemi (deleted_at alanına şu anki tarihi yazar)
+	// 3. Kullanıcının yaptığı tüm gönüllü başvurularını (Volunteer) temizle
+	database.DB.Where("user_id = ?", user.ID).Delete(&models.Volunteer{})
+
+	// 4. Kullanıcının açtığı tüm ilanları bul
+	var userRequests []models.BloodRequest
+	if err := database.DB.Where("user_id = ?", user.ID).Find(&userRequests).Error; err == nil {
+		for _, req := range userRequests {
+			// İlana yapılan tüm gönüllü başvurularını sil
+			database.DB.Where("blood_request_id = ?", req.ID).Delete(&models.Volunteer{})
+			// İlanın kendisini sil
+			database.DB.Delete(&req)
+		}
+	}
+
+	// 5. GORM ile Soft Delete İşlemi (deleted_at alanına şu anki tarihi yazar)
 	if err := database.DB.Delete(&user).Error; err != nil {
 		return err
 	}
