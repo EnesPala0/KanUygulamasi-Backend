@@ -228,3 +228,28 @@ func ChangeUserPassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Şifreniz başarıyla güncellendi."})
 }
+
+// DeleteMe, giriş yapmış kullanıcının kendi hesabını silmesi için gelen isteği işler
+func DeleteMe(c *gin.Context) {
+	// 1. Auth Middleware'in güvenlik kontrolünden geçen kullanıcının ID'sini alıyoruz
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Yetkisiz işlem: Kullanıcı kimliği bulunamadı"})
+		return
+	}
+
+	// Arayüzden gelen ID'yi uint (sayı) tipine çeviriyoruz
+	userID := uint(userIDInterface.(float64))
+
+	// 2. İşi Service (Aşçı) katmanına devrediyoruz
+	if err := services.DeleteUser(userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Hesap silinirken bir hata oluştu", "details": err.Error()})
+		return
+	}
+
+	// 3. Başarılı olursa kullanıcıya güle güle diyoruz :)
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Hesabınız başarıyla silindi. Bütün verileriniz anonimleştirildi.",
+	})
+}

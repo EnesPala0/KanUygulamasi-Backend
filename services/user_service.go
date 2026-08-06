@@ -149,3 +149,31 @@ func ChangePassword(userID uint, oldPassword, newPassword string) error {
 
 	return database.DB.Model(&user).Update("password", string(hashedPassword)).Error
 }
+
+func DeleteUser(userID uint) error {
+	var user models.User
+
+	// 1. Kullanıcıyı bul
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		return err
+	}
+
+	// 2. Kullanıcının kişisel verilerini temizle (Anonimleştirme)
+	// Böylece App Store ve KVKK kurallarına tam uymuş oluruz.
+	database.DB.Model(&user).Updates(map[string]interface{}{
+		"name":            "Silinmiş",
+		"last_name":       "Kullanıcı",
+		"email":           fmt.Sprintf("deleted_%d@kanuygulamasi.com", user.ID),
+		"phone":           "0000000000",
+		"expo_push_token": "", // Bildirimleri tamamen kapatıyoruz
+		"latitude":        0,
+		"longitude":       0,
+	})
+
+	// 3. GORM ile Soft Delete İşlemi (deleted_at alanına şu anki tarihi yazar)
+	if err := database.DB.Delete(&user).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
