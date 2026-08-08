@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"fmt"
 	"kan-uygulamasi/database"
 	"kan-uygulamasi/models"
 
@@ -18,6 +17,11 @@ type BloodRequestFilter struct {
 
 // CreateBloodRequest, yeni bir kan talebi oluşturur ve veritabanına kaydeder.
 func CreateBloodRequest(bloodRequest *models.BloodRequest) error {
+
+	// Sanity Check: İstenen ünite sıfır veya negatif olamaz
+	if bloodRequest.RequiredUnits <= 0 {
+		bloodRequest.RequiredUnits = 1
+	}
 
 	//buraya ileride kurallar eklenecek, örneğin aynı kullanıcıdan aynı kan grubunda birden fazla talep oluşturulmasını engellemek gibi.
 	//Şimdilik veritabanına kaydetme işlemi yapıyoruz
@@ -47,8 +51,8 @@ func GetAllBloodRequests(filter BloodRequestFilter) ([]models.BloodRequest, erro
 		query = query.Where("urgency_level = ?", filter.Urgency)
 	}
 
-	// Sorguyu çalıştır ve sonuçları requests dizisine aktar
-	err := query.Find(&requests).Error
+	// Sorguyu çalıştır ve sonuçları requests dizisine aktar (Maksimum 50 kayıt getir ve en yeni en üstte olsun)
+	err := query.Order("created_at desc").Limit(50).Find(&requests).Error
 
 	return requests, err
 }
@@ -159,22 +163,20 @@ func CompleteBloodRequest(requestID string, loggedUserID uint) error {
 	//5. Bu ilana başvurmuş ve "approved" (Onaylandı) durumunda olan gönüllüleri bulup sayaçlarını artırıyoruz!
 	var approvedVolunteers []models.Volunteer
 	if err := database.DB.Where("blood_request_id = ? AND status IN ?", request.ID, []string{"approved", "accepted", "onaylandı", "kabul"}).Find(&approvedVolunteers).Error; err == nil {
-		units := request.RequiredUnits
-		if units <= 0 {
-			units = 1
-		}
 		for _, vol := range approvedVolunteers {
+			// Bir bağışçı genelde 1 ünite kan verir ve 1 ünite kan 3 hayat kurtarır (Kızılay standardı).
+			// Her gönüllüye 1 bağış ve 3 kurtarılan hayat ekliyoruz.
 			database.DB.Model(&models.User{}).Where("id = ?", vol.UserID).
 				Updates(map[string]interface{}{
-					"saved_lives":     gorm.Expr("saved_lives + ?", units),
-					"total_donations": gorm.Expr("total_donations + ?", units),
+					"saved_lives":     gorm.Expr("saved_lives + ?", 3),
+					"total_donations": gorm.Expr("total_donations + ?", 1),
 					"streak_years":    gorm.Expr("CASE WHEN streak_years = 0 THEN 1 ELSE streak_years END"),
 				})
 			CreateNotification(
 				vol.UserID,
 				"completed",
 				"Harika Bir İş Başardınız!",
-				fmt.Sprintf("Destek olduğunuz kan talebi başarıyla tamamlandı. Toplam %d ünite kan bağışı ile %d hayat kurtardınız! Sonsuz teşekkürler. ❤️", units, units),
+				"Destek olduğunuz kan talebi başarıyla tamamlandı. Yaptığınız 1 ünite kan bağışı ile 3 hayat kurtardınız! Sonsuz teşekkürler. ❤️",
 				request.ID,
 			)
 		}

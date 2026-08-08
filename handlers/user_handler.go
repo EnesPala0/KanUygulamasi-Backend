@@ -49,10 +49,12 @@ func UpdateUserLocation(c *gin.Context) {
 	}
 
 	//veritabanında (GORM ile) sadece bu 3 alanı güncelliyoruz
-	if err := database.DB.Model(&models.User{}).Where("id = ?", userID).Updates(models.User{
-		Latitude:      req.Latitude,
-		Longitude:     req.Longitude,
-		ExpoPushToken: req.ExpoPushToken,
+	// GORM struct güncellemesinde 0 veya boş ("") değerleri GÖRMEZDEN GELİR. 
+	// Bu yüzden map[string]interface{} kullanmalıyız.
+	if err := database.DB.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+		"latitude":        req.Latitude,
+		"longitude":       req.Longitude,
+		"expo_push_token": req.ExpoPushToken,
 	}).Error; err != nil {
 		c.JSON(500, gin.H{"error": "Veritabanı güncellenemedi"})
 		return

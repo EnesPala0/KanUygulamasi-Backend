@@ -91,8 +91,8 @@ func AcceptVolunteer(volunteerID string, loggedUserID uint) error {
 		return err
 	}
 
-	//5. ilan durumunu güncelliyoruz
-	if err := tx.Model(volunteer.BloodRequest).Update("status", "resolved").Error; err != nil {
+	//5. ilan durumunu güncelliyoruz (Tamamen kapatmak yerine süreç devam ettiği için in_progress yapıyoruz)
+	if err := tx.Model(volunteer.BloodRequest).Update("status", "in_progress").Error; err != nil {
 		tx.Rollback()
 		return err
 	}

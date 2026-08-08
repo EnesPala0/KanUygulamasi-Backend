@@ -27,13 +27,13 @@ func StartBloodRequestCleanup() {
 
 func performCleanup() {
 	var expiredRequests []models.BloodRequest
-	
+
 	// Şu andan 168 saat (7 gün) öncesini bul
 	sevenDaysAgo := time.Now().Add(-168 * time.Hour)
 
 	// Status'ü "active" olan VE 7 günden eski olan ilanları çek
 	result := database.DB.Where("status = ? AND created_at < ?", "active", sevenDaysAgo).Find(&expiredRequests)
-	
+
 	if result.Error != nil {
 		log.Println("İlan temizliği (cleanup) sırasında veritabanı hatası:", result.Error)
 		return
@@ -56,12 +56,12 @@ func performCleanup() {
 		// İlan sahibine bildirim gönder
 		notifTitle := "İlan Süresi Doldu"
 		notifMessage := "Kan arayışınız 1 haftayı (7 gün) doldurduğu için otomatik olarak kapatıldı. İhtiyacınız devam ediyorsa lütfen yeni bir ilan açın."
-		
+
 		err := CreateNotification(req.UserId, "expired", notifTitle, notifMessage, req.ID)
 		if err != nil {
 			log.Printf("İlan ID %d için bildirim gönderilirken hata: %v\n", req.ID, err)
 		}
 	}
-	
+
 	fmt.Println("[CLEANUP] Otomatik ilan kapatma işlemi tamamlandı.")
 }
