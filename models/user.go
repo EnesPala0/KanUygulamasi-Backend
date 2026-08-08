@@ -17,5 +17,5 @@ type User struct {
 	StreakYears    int     `gorm:"default:0" json:"streak_years"`
 	Latitude       float64 `json:"latitude"`
 	Longitude      float64 `json:"longitude"`
-	ExpoPushToken  string  `json:"expo_push_token"`
+	ExpoPushToken  string  `json:"-"`
 }

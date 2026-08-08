@@ -20,6 +20,9 @@ func SetupRoutes(router *gin.Engine) {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	// Tüm API uçları için (Giriş, Kayıt, Listeleme dahil) DoS koruması
+	api.Use(middlewares.RateLimitMiddleware())
+
 	{
 		// --- HERKESE AÇIK ROTALAR (Token gerektirmez) ---
 		api.POST("/users", handlers.CreateUser)
