@@ -68,13 +68,18 @@ func GetBloodRequestByID(id string) (models.BloodRequest, error) {
 	return request, err
 }
 
-func UpdateBloodRequest(id string, updatedData *models.BloodRequest) (models.BloodRequest, error) {
+func UpdateBloodRequest(id string, updatedData *models.BloodRequest, loggedUserID uint) (models.BloodRequest, error) {
 	var currentRequest models.BloodRequest
 
 	//veritabanından eski ilanı çekiyoruz
 	err := database.DB.First(&currentRequest, id).Error
 	if err != nil {
 		return currentRequest, err
+	}
+
+	// GÜVENLİK (IDOR Engellemesi): İlanın sahibi ile giriş yapan kişi aynı mı?
+	if currentRequest.UserId != loggedUserID {
+		return currentRequest, errors.New("unauthorized: you can only update your own blood requests")
 	}
 
 	// Sadece dolu gelen (boş/sıfır olmayan) alanları güncelleyelim ki diğer alanlar sıfırlanmasın/bozulmasın
@@ -115,13 +120,18 @@ func UpdateBloodRequest(id string, updatedData *models.BloodRequest) (models.Blo
 }
 
 // soft-delete yöntemi ile sileceğiz
-func DeleteBloodRequest(id string) error {
+func DeleteBloodRequest(id string, loggedUserID uint) error {
 	var request models.BloodRequest
 
 	//veritabanından ilanı çekiyoruz
 	err := database.DB.First(&request, id).Error
 	if err != nil {
 		return err
+	}
+
+	// GÜVENLİK (IDOR Engellemesi): İlanın sahibi ile silmek isteyen kişi aynı mı?
+	if request.UserId != loggedUserID {
+		return errors.New("unauthorized: you can only delete your own blood requests")
 	}
 
 	// İlana bağlı olan tüm gönüllü başvurularını da temizle (Cascade soft-delete)

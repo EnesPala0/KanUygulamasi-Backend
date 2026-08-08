@@ -143,15 +143,23 @@ func GetBloodRequestByID(c *gin.Context) {
 func UpdateBloodRequest(c *gin.Context) {
 	id := c.Param("id")
 
+	// Token'dan giriş yapan kullanıcının ID'sini alıyoruz
+	tokenUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
+		return
+	}
+	loggedUserID := uint(tokenUserID.(float64))
+
 	var updatedData models.BloodRequest
 	if err := c.ShouldBindJSON(&updatedData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format or missing required fields", "details": err.Error()})
 		return
 	}
 
-	updatedRequest, err := services.UpdateBloodRequest(id, &updatedData)
+	updatedRequest, err := services.UpdateBloodRequest(id, &updatedData, loggedUserID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update blood request", "details": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": "Failed to update blood request", "details": err.Error()})
 		return
 	}
 
@@ -161,11 +169,20 @@ func UpdateBloodRequest(c *gin.Context) {
 func DeleteBloodRequest(c *gin.Context) {
 	id := c.Param("id")
 
-	err := services.DeleteBloodRequest(id)
+	// Token'dan giriş yapan kullanıcının ID'sini alıyoruz
+	tokenUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: user ID not found in token"})
+		return
+	}
+	loggedUserID := uint(tokenUserID.(float64))
+
+	err := services.DeleteBloodRequest(id, loggedUserID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
+		c.JSON(http.StatusForbidden, gin.H{
 			"success": false,
-			"error":   "The blood request could not be found or has already been deleted.",
+			"error":   "The blood request could not be deleted or you are not authorized.",
+			"details": err.Error(),
 		})
 		return
 	}
