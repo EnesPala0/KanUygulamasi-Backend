@@ -255,3 +255,47 @@ func DeleteMe(c *gin.Context) {
 		"message": "Hesabınız başarıyla silindi. Bütün verileriniz anonimleştirildi.",
 	})
 }
+
+// PublicUserResponse, dışarıya sızdırılmaması gereken bilgileri maskeleyen güvenli struct
+type PublicUserResponse struct {
+	ID             uint   `json:"id"`
+	FirstName      string `json:"first_name"`
+	LastName       string `json:"last_name"`
+	BloodType      string `json:"blood_type"`
+	City           string `json:"city"`
+	SavedLives     int    `json:"saved_lives"`
+	TotalDonations int    `json:"total_donations"`
+	StreakYears    int    `json:"streak_years"`
+}
+
+// GetUserByID, dışarıya sadece public bilgileri döndürür
+func GetUserByID(c *gin.Context) {
+	idParam := c.Param("id")
+	
+	// id string'den uint'e çeviriyoruz
+	var id uint
+	if _, err := fmt.Sscanf(idParam, "%d", &id); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz kullanıcı ID'si"})
+		return
+	}
+
+	user, err := services.GetUserByID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Kullanıcı bulunamadı"})
+		return
+	}
+
+	// Sadece güvenli bilgileri DTO'ya aktarıp dönüyoruz
+	response := PublicUserResponse{
+		ID:             user.ID,
+		FirstName:      user.Name,
+		LastName:       user.LastName,
+		BloodType:      user.BloodType,
+		City:           user.City,
+		SavedLives:     user.SavedLives,
+		TotalDonations: user.TotalDonations,
+		StreakYears:    user.StreakYears,
+	}
+
+	c.JSON(http.StatusOK, response)
+}

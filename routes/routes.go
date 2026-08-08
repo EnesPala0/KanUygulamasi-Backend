@@ -32,6 +32,8 @@ func SetupRoutes(router *gin.Engine) {
 		// İlanları listeleme herkese açık olabilir
 		api.GET("/blood-requests", handlers.GetAllBloodRequests)
 		api.GET("/blood-requests/:id", handlers.GetBloodRequestByID)
+		
+		api.GET("/users/:id", handlers.GetUserByID)
 
 		// --- KORUMALI ROTALAR (Token gerekir) ---
 		// Bir alt grup oluşturup AuthMiddleware'i buraya bağlıyoruz
