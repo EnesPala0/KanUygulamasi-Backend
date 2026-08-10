@@ -7,7 +7,7 @@ import (
 	"github.com/resend/resend-go/v2"
 )
 
-// SendEmail, resend API'sini kullanarak e-posta gönderir
+// SendEmaille resend API'sini kullıcaz ve e-posta göndercez
 func SendEmail(to string, subject string, htmlContent string) error {
 	apiKey := os.Getenv("RESEND_API_KEY")
 	if apiKey == "" {
