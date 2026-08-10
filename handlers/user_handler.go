@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"crypto/rand"
 	"fmt"
 	"kan-uygulamasi/database"
 	"kan-uygulamasi/models"
 	"kan-uygulamasi/services"
+	"math/big"
 	"net/http"
 	"regexp"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -108,16 +111,23 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	//OTP kodu ve geçerlilik süresi üretiyoruz
+	otpCode := generateOTP()
+	expiryTime := time.Now().Add(15 * time.Minute) // OTP 5 dakika geçerli olacak
+
 	// 1.5 ADIM: DTO'daki verileri gerçek Veritabanı modelimize (models.User) aktarıyoruz.
 	user := models.User{
-		Name:      req.FirstName,
-		LastName:  req.LastName,
-		Email:     req.Email,
-		Password:  req.Password, // GÜVENLİK NOTU: services.CreateUser içinde bu şifreyi bcrypt ile hash'lediğinden emin ol!
-		Phone:     req.Phone,
-		BloodType: req.BloodType,
-		City:      req.City,
-		District:  req.District,
+		Name:             req.FirstName,
+		LastName:         req.LastName,
+		Email:            req.Email,
+		Password:         req.Password, // GÜVENLİK NOTU: services.CreateUser içinde bu şifreyi bcrypt ile hash'lediğinden emin ol!
+		Phone:            req.Phone,
+		BloodType:        req.BloodType,
+		City:             req.City,
+		District:         req.District,
+		IsVerified:       false,
+		VerificationCode: otpCode,
+		CodeExpiry:       expiryTime,
 	}
 
 	// 2. ADIM: Service'e gidip veritabanına kaydetme işlemini yapıyoruz.
@@ -127,6 +137,24 @@ func CreateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create user", "details": err.Error()})
 		return
 	}
+
+	go func(userEmail, code string) {
+		subject := "KanBağı - E-Posta Doğrulama Kodunuz 🩸"
+		htmlContent := fmt.Sprintf(`
+			<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+				<h2 style="color: #E53E3E;">KanBağı'na Hoş Geldiniz!</h2>
+				<p>Hesabınızı doğrulamak ve kan bağışı ilanlarına erişmek için aşağıdaki 6 haneli kodu kullanın:</p>
+				<div style="background-color: #F7FAFC; border: 1px solid #E2E8F0; padding: 15px; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #E53E3E; width: fit-content; border-radius: 8px; margin: 20px 0;">
+					%s
+				</div>
+				<p style="color: #718096; font-size: 13px;">Bu doğrulama kodu <strong>15 dakika</strong> boyunca geçerlidir.</p>
+			</div>
+		`, code)
+
+		if err := services.SendEmail(userEmail, subject, htmlContent); err != nil {
+			fmt.Printf("[MAIL ERROR] %s adresine mail atılamadı: %v\n", userEmail, err)
+		}
+	}(user.Email, otpCode)
 
 	// 3. ADIM: Başarılı bir şekilde kaydedildiyse, başarılı mesajı ve oluşturulan kullanıcıyı döndürüyoruz.
 	// NOT: models.User içindeki Password alanında json:"-" olduğu için, burada user'ı döndürsek bile şifre dışarı sızmayacak. Kusursuz güvenlik!
@@ -308,4 +336,12 @@ func GetUserByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func generateOTP() string {
+	nBig, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		return "000000" // fallback in case of error
+	}
+	return fmt.Sprintf("%06d", nBig.Int64())
 }
