@@ -6,6 +6,7 @@ import (
 	"kan-uygulamasi/models"
 	"kan-uygulamasi/services"
 	"net/http"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 )
@@ -49,7 +50,7 @@ func UpdateUserLocation(c *gin.Context) {
 	}
 
 	//veritabanında (GORM ile) sadece bu 3 alanı güncelliyoruz
-	// GORM struct güncellemesinde 0 veya boş ("") değerleri GÖRMEZDEN GELİR. 
+	// GORM struct güncellemesinde 0 veya boş ("") değerleri GÖRMEZDEN GELİR.
 	// Bu yüzden map[string]interface{} kullanmalıyız.
 	if err := database.DB.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
 		"latitude":        req.Latitude,
@@ -95,6 +96,15 @@ func CreateUser(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		// Eğer JSON formatı bozuksa veya zorunlu alanlar eksikse, hata döndürüyoruz.
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format or missing required fields", "details": err.Error()})
+		return
+	}
+
+	hasMinLen := len(req.Password) >= 8
+	matchUppercase, _ := regexp.MatchString(`[A-Z]`, req.Password)
+	matchNumber, _ := regexp.MatchString(`[0-9]`, req.Password)
+
+	if !hasMinLen || !matchUppercase || !matchNumber {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be at least 8 characters long, contain at least one uppercase letter and one number."})
 		return
 	}
 
@@ -271,7 +281,7 @@ type PublicUserResponse struct {
 // GetUserByID, dışarıya sadece public bilgileri döndürür
 func GetUserByID(c *gin.Context) {
 	idParam := c.Param("id")
-	
+
 	// id string'den uint'e çeviriyoruz
 	var id uint
 	if _, err := fmt.Sscanf(idParam, "%d", &id); err != nil {
