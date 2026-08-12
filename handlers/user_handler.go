@@ -36,6 +36,11 @@ type LocationUpdateRequest struct {
 	ExpoPushToken string  `json:"expo_push_token"`
 }
 
+type VerifyOTPRequest struct {
+	Email string `json:"email" binding:"required,email"`
+	Code  string `json:"code" binding:"required,len=6"`
+}
+
 func UpdateUserLocation(c *gin.Context) {
 	//burada tokendan giriş yapan kişiinin ID sini alıyoruz
 	userIDInterface, exists := c.Get("user_id")
@@ -344,4 +349,43 @@ func generateOTP() string {
 		return "000000" // fallback in case of error
 	}
 	return fmt.Sprintf("%06d", nBig.Int64())
+}
+
+func VerifyUserOTP(c *gin.Context) {
+	var req VerifyOTPRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format or missing required fields", "details": err.Error()})
+		return
+	}
+
+	user, err := services.GetUserByEmail(req.Email)
+	if err != nil || user == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if user.IsVerified {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User is already verified"})
+		return
+	}
+
+	if user.VerificationCode != req.Code {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid verification code"})
+		return
+	}
+
+	user.IsVerified = true
+
+	user.VerificationCode = ""
+	user.CodeExpiry = time.Time{} // sıfır zamanı
+
+	if err := services.UpdateUser(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user verification status", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "User verified successfully",
+	})
 }

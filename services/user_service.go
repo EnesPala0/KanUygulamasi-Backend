@@ -130,6 +130,11 @@ func GetUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
+// UpdateUser, verilen kullanıcı modelini veritabanında tüm alanlarıyla günceller
+func UpdateUser(user *models.User) error {
+	return database.DB.Save(user).Error
+}
+
 func ChangePassword(userID uint, oldPassword, newPassword string) error {
 	var user models.User
 	if err := database.DB.First(&user, userID).Error; err != nil {
