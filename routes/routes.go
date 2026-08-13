@@ -34,7 +34,7 @@ func SetupRoutes(router *gin.Engine) {
 		api.GET("/blood-requests/:id", handlers.GetBloodRequestByID)
 
 		api.GET("/users/:id", handlers.GetUserByID)
-		api.POST("/api/users/verify", handlers.VerifyUserOTP)
+		api.POST("/users/verify", handlers.VerifyUserOTP)
 		// --- KORUMALI ROTALAR (Token gerekir) ---
 		// Bir alt grup oluşturup AuthMiddleware'i buraya bağlıyoruz
 		protected := api.Group("/")
