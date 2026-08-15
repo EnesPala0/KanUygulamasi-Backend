@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type RegisterRequest struct {
@@ -39,6 +40,10 @@ type LocationUpdateRequest struct {
 type VerifyOTPRequest struct {
 	Email string `json:"email" binding:"required,email"`
 	Code  string `json:"code" binding:"required,len=6"`
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
 }
 
 func UpdateUserLocation(c *gin.Context) {
@@ -225,12 +230,8 @@ func GetMe(c *gin.Context) {
 	c.JSON(200, user)
 }
 
-type ForgotPasswordInput struct {
-	Email string `json:"email" binding:"required,email"`
-}
-
 func ForgotPassword(c *gin.Context) {
-	var input ForgotPasswordInput
+	var input ForgotPasswordRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Lütfen geçerli bir e-posta adresi giriniz."})
 		return
@@ -238,9 +239,38 @@ func ForgotPassword(c *gin.Context) {
 
 	user, err := services.GetUserByEmail(input.Email)
 	if err != nil || user == nil {
+		// Not: Senin eski koddaki StatusNotFound (404) mantığını tuttuk.
 		c.JSON(http.StatusNotFound, gin.H{"error": "Bu e-posta adresiyle kayıtlı bir hesap bulunamadı."})
 		return
 	}
+
+	// 1. 6 Haneli yeni kod üretiyoruz (15 dk geçerli)
+	resetCode := generateOTP()
+	user.ResetToken = resetCode
+	user.ResetTokenExpiry = time.Now().Add(15 * time.Minute)
+
+	// 2. Kodu veritabanına kaydediyoruz
+	if err := services.UpdateUser(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "İşlem sırasında bir hata oluştu."})
+		return
+	}
+
+	// 3. Maili arka planda (goroutine ile) fırlatıyoruz
+	go func(userEmail, code string) {
+		subject := "KanBağı - Şifre Sıfırlama Kodu 🔐"
+		htmlContent := fmt.Sprintf(`
+			<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+				<h2 style="color: #E53E3E;">Şifre Sıfırlama Talebi</h2>
+				<p>Hesabınızın şifresini sıfırlamak için aşağıdaki 6 haneli kodu kullanın:</p>
+				<div style="background-color: #F7FAFC; border: 1px solid #E2E8F0; padding: 15px; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #E53E3E; width: fit-content; border-radius: 8px; margin: 20px 0;">
+					%s
+				</div>
+				<p style="color: #718096; font-size: 13px;">Eğer bu talebi siz yapmadıysanız, lütfen bu e-postayı dikkate almayın.</p>
+			</div>
+		`, code)
+		services.SendEmail(userEmail, subject, htmlContent)
+	}(user.Email, resetCode)
+	// -----------------------------------
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Şifre sıfırlama talimatları e-posta adresinize iletildi. Lütfen gelen kutunuzu kontrol ediniz.",
@@ -388,4 +418,43 @@ func VerifyUserOTP(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User verified successfully",
 	})
+}
+
+type ResetPasswordRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	Code        string `json:"code" binding:"required,len=6"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+func ResetPassword(c *gin.Context) {
+	var req ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Eksik veya hatalı bilgi girdiniz."})
+		return
+	}
+
+	user, err := services.GetUserByEmail(req.Email)
+	if err != nil || user.ResetToken != req.Code || time.Now().After(user.ResetTokenExpiry) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz veya süresi dolmuş sıfırlama kodu."})
+		return
+	}
+
+	// Şifreyi Hashle (services.go içinde kullandığın bcrypt mantığı)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Şifre oluşturulurken hata oluştu."})
+		return
+	}
+
+	// Şifreyi güncelle ve güvenlik için Token'ları (izleri) temizle
+	user.Password = string(hashedPassword)
+	user.ResetToken = ""
+	user.ResetTokenExpiry = time.Time{}
+
+	if err := services.UpdateUser(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Şifre güncellenemedi."})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Şifreniz başarıyla güncellendi. Yeni şifrenizle giriş yapabilirsiniz."})
 }
