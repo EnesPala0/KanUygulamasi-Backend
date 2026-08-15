@@ -151,13 +151,37 @@ func CreateUser(c *gin.Context) {
 	go func(userEmail, code string) {
 		subject := "KanBağı - E-Posta Doğrulama Kodunuz 🩸"
 		htmlContent := fmt.Sprintf(`
-			<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-				<h2 style="color: #E53E3E;">KanBağı'na Hoş Geldiniz!</h2>
-				<p>Hesabınızı doğrulamak ve kan bağışı ilanlarına erişmek için aşağıdaki 6 haneli kodu kullanın:</p>
-				<div style="background-color: #F7FAFC; border: 1px solid #E2E8F0; padding: 15px; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #E53E3E; width: fit-content; border-radius: 8px; margin: 20px 0;">
-					%s
-				</div>
-				<p style="color: #718096; font-size: 13px;">Bu doğrulama kodu <strong>15 dakika</strong> boyunca geçerlidir.</p>
+			<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; padding: 40px 20px; margin: 0; width: 100%%; box-sizing: border-box;">
+				<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+					<tr>
+						<td style="background-color: #E53E3E; padding: 30px; text-align: center;">
+							<h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 1px;">KanBağı</h1>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding: 40px 30px;">
+							<h2 style="color: #1f2937; margin-top: 0; font-size: 22px; font-weight: 600;">Aramıza Hoş Geldiniz!</h2>
+							<p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px;">
+								Hesabınızı doğrulamak ve platformumuza tam erişim sağlamak için aşağıdaki doğrulama kodunu kullanabilirsiniz.
+							</p>
+							<div style="background-color: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
+								<span style="display: block; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600; margin-bottom: 8px;">Doğrulama Kodunuz</span>
+								<span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #E53E3E;">%s</span>
+							</div>
+							<p style="color: #6b7280; font-size: 14px; line-height: 20px; margin-bottom: 0;">
+								Bu kod <strong>15 dakika</strong> boyunca geçerlidir. Lütfen güvenliğiniz için bu kodu kimseyle paylaşmayın.
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<td style="background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+							<p style="color: #9ca3af; font-size: 12px; margin: 0;">
+								&copy; 2026 KanBağı Uygulaması. Tüm hakları saklıdır.<br>
+								Bu e-posta otomatik olarak gönderilmiştir, lütfen yanıtlamayınız.
+							</p>
+						</td>
+					</tr>
+				</table>
 			</div>
 		`, code)
 
@@ -259,13 +283,37 @@ func ForgotPassword(c *gin.Context) {
 	go func(userEmail, code string) {
 		subject := "KanBağı - Şifre Sıfırlama Kodu 🔐"
 		htmlContent := fmt.Sprintf(`
-			<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-				<h2 style="color: #E53E3E;">Şifre Sıfırlama Talebi</h2>
-				<p>Hesabınızın şifresini sıfırlamak için aşağıdaki 6 haneli kodu kullanın:</p>
-				<div style="background-color: #F7FAFC; border: 1px solid #E2E8F0; padding: 15px; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #E53E3E; width: fit-content; border-radius: 8px; margin: 20px 0;">
-					%s
-				</div>
-				<p style="color: #718096; font-size: 13px;">Eğer bu talebi siz yapmadıysanız, lütfen bu e-postayı dikkate almayın.</p>
+			<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; padding: 40px 20px; margin: 0; width: 100%%; box-sizing: border-box;">
+				<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+					<tr>
+						<td style="background-color: #E53E3E; padding: 30px; text-align: center;">
+							<h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 1px;">KanBağı</h1>
+						</td>
+					</tr>
+					<tr>
+						<td style="padding: 40px 30px;">
+							<h2 style="color: #1f2937; margin-top: 0; font-size: 22px; font-weight: 600;">Şifre Sıfırlama Talebi</h2>
+							<p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 30px;">
+								Hesabınızın şifresini sıfırlamak için bir talepte bulunuldu. Yeni şifrenizi belirlemek için aşağıdaki güvenlik kodunu kullanabilirsiniz.
+							</p>
+							<div style="background-color: #f9fafb; border: 1px dashed #d1d5db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
+								<span style="display: block; font-size: 12px; text-transform: uppercase; color: #6b7280; font-weight: 600; margin-bottom: 8px;">Sıfırlama Kodunuz</span>
+								<span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #E53E3E;">%s</span>
+							</div>
+							<p style="color: #6b7280; font-size: 14px; line-height: 20px; margin-bottom: 0;">
+								Bu kod <strong>15 dakika</strong> boyunca geçerlidir. Eğer bu talebi siz yapmadıysanız, hesabınız güvendedir, bu e-postayı dikkate almayabilirsiniz.
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<td style="background-color: #f9fafb; padding: 20px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+							<p style="color: #9ca3af; font-size: 12px; margin: 0;">
+								&copy; 2026 KanBağı Uygulaması. Tüm hakları saklıdır.<br>
+								Bu e-posta otomatik olarak gönderilmiştir, lütfen yanıtlamayınız.
+							</p>
+						</td>
+					</tr>
+				</table>
 			</div>
 		`, code)
 		services.SendEmail(userEmail, subject, htmlContent)
