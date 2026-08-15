@@ -25,4 +25,6 @@ type User struct {
 	IsVerified       bool      `gorm:"default:false" json:"is_verified"`
 	VerificationCode string    `json:"-" gorm:"type:varchar(6)"`
 	CodeExpiry       time.Time `json:"-"`
+	ResetToken       string    `json:"-" gorm:"type:varchar(6)"`
+	ResetTokenExpiry time.Time `json:"-"`
 }
