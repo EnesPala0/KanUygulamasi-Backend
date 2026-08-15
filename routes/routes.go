@@ -36,7 +36,7 @@ func SetupRoutes(router *gin.Engine) {
 		api.GET("/users/:id", handlers.GetUserByID)
 		api.POST("/users/verify", handlers.VerifyUserOTP)
 		api.POST("/users/reset-password", handlers.ResetPassword)
-		api.POST("/api/users/forgot-password", handlers.ForgotPassword)
+		api.POST("/users/forgot-password", handlers.ForgotPassword)
 		// --- KORUMALI ROTALAR (Token gerekir) ---
 		// Bir alt grup oluşturup AuthMiddleware'i buraya bağlıyoruz
 		protected := api.Group("/")
