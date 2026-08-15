@@ -48,9 +48,17 @@ func CreateBloodRequest(c *gin.Context) {
 	go func(req models.BloodRequest) {
 		var nearbyUsers []models.User
 
-		// GORM ve Earthdistance ile 100.000 metre (100 km) çapındaki kullanıcıları bulma
+		// Aciliyet durumuna göre radar yarıçapını belirliyoruz (metre cinsinden)
+		radius := 20000 // Normal: 20 km
+		if req.UrgencyLevel == "Kritik" {
+			radius = 500000 // Kritik: 500 km
+		} else if req.UrgencyLevel == "Acil" {
+			radius = 100000 // Acil: 100 km
+		}
+
+		// GORM ve Earthdistance ile dinamik çapta kullanıcıları bulma
 		err := database.DB.Where("earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(?, ?)) <= ?",
-			req.Latitude, req.Longitude, 100000). // İlanın açıldığı koordinat ve 100 km sınırı
+			req.Latitude, req.Longitude, radius). // Dinamik çap sınırı
 			Where("expo_push_token != ''").       // Bildirim token'ı olanları (uygulamaya girenleri) filtrele
 			Where("id != ?", req.UserId).         // İlanı açan kişinin KENDİSİNE bildirim gitmesini engelle
 			Find(&nearbyUsers).Error
@@ -60,7 +68,7 @@ func CreateBloodRequest(c *gin.Context) {
 			return
 		}
 
-		fmt.Printf("RADAR: %s şehrinde açılan ilana 100 km çapında %d adet uygun kullanıcı bulundu!\n", req.City, len(nearbyUsers))
+		fmt.Printf("RADAR: %s şehrinde açılan ilana %d km çapında %d adet uygun kullanıcı bulundu!\n", req.City, radius/1000, len(nearbyUsers))
 
 		var tokens []string
 
