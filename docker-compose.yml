@@ -12,5 +12,19 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  api:
+    build: .
+    container_name: kanbagi-api
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      # Docker ağında localhost yerine servis adı (db) kullanılır!
+      - DB_HOST=db
+    depends_on:
+      - db
+
 volumes:
   pgdata:

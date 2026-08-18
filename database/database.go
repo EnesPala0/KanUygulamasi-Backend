@@ -19,7 +19,7 @@ func ConnectDB() {
 	//burda .env dosyasını yüklüyoruz önce error varsa hata
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Uyarı: .env dosyası bulunamadı. Sistem ortam değişkenleri kullanılacak (Docker/AWS).")
 	}
 
 	//os..Getenv ile .env dosyasındaki değişkenleri alıyoruz
