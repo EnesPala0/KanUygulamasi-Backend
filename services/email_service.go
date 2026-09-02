@@ -16,9 +16,14 @@ func SendEmail(to string, subject string, htmlContent string) error {
 
 	client := resend.NewClient(apiKey)
 
+	fromEmail := os.Getenv("RESEND_FROM")
+	if fromEmail == "" {
+		fromEmail = "KanBağı App <onboarding@resend.dev>" // Varsayılan fallback
+	}
+
 	params := &resend.SendEmailRequest{
-		From:    "KanBağı App <onboarding@resend.dev>",
-		To:      []string{to}, // Şimdilik sadece kendi mailine gidecek
+		From:    fromEmail,
+		To:      []string{to},
 		Subject: subject,
 		Html:    htmlContent,
 	}
