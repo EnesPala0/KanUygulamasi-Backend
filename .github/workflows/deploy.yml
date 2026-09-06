@@ -1,0 +1,24 @@
+name: Deploy Backend to AWS
+
+on:
+  push:
+    branches:
+      - main # Kod main dalına pushlandığında otomatik başlar
+
+jobs:
+  deploy:
+    name: Deploying app to AWS
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: SSH into AWS and run commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USERNAME }}
+          key: ${{ secrets.AWS_PRIVATE_KEY }}
+          script: |
+            cd KanUygulamasi-Backend
+            git pull origin main
+            sudo docker compose down
+            sudo docker compose up --build -d
