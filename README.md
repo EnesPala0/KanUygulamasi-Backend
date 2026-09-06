@@ -1,47 +1,72 @@
-# 🩸 Kan Bağışı API (Blood Donation API)
+# 🩸 Kan Bağışı Platformu API (Blood Donation Backend)
 
-Bu proje, acil kan ihtiyacı olan hastalar ile gönüllü bağışçıları hızlı ve güvenli bir şekilde bir araya getirmeyi amaçlayan, modern mimariyle tasarlanmış bir RESTful API servisidir.
+![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/postgresql-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=Cloudflare&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
 
-## 🚀 Teknolojik Altyapı (Tech Stack)
+Bu proje, acil kan ihtiyacı olan hastalar ile onlara en yakın konumdaki gönüllü bağışçıları hızlı ve güvenli bir şekilde bir araya getirmeyi amaçlayan, **gerçek zamanlı lokasyon bazlı** bir RESTful API servisidir.
 
-* **Programlama Dili:** Go (Golang)
-* **Web Framework:** Gin HTTP Framework
-* **Veritabanı & ORM:** PostgreSQL, GORM
-* **Güvenlik & Kimlik Doğrulama:** JWT (JSON Web Token), Bcrypt
-* **Altyapı & Dağıtım:** Docker, Docker Compose
+## 🚀 Teknolojik Altyapı & Mimari (Tech Stack)
 
-## ✨ Temel Özellikler
+Sistem, yüksek ölçeklenebilirlik ve güvenlik standartları göz önünde bulundurularak tasarlanmıştır.
 
-* **Güvenli Kullanıcı Yönetimi:** Kullanıcı şifreleri veritabanına doğrudan yazılmaz, Bcrypt algoritması ile hash'lenerek üst düzey güvenlik sağlanır.
-* **JWT Entegrasyonu (Auth Middleware):** Kullanıcı giriş işlemlerinde (Login) benzersiz bir token üretilir. İlan ekleme, silme ve güncelleme gibi kritik işlemler sadece doğrulanmış token'a sahip kullanıcılar tarafından yapılabilir.
-* **İlan Yönetimi (CRUD):** Kullanıcılar aciliyet durumu, kan grubu, şehir ve hastane gibi detayları belirterek kan bağışı talepleri oluşturabilir.
-* **Konteynerizasyon:** Docker Compose sayesinde sistem herhangi bir bilgisayarda dışa bağımlılık gerektirmeden tek bir komutla ayağa kaldırılabilir.
+* **Backend:** Go (Golang), Gin HTTP Framework
+* **Veritabanı:** PostgreSQL (GORM) & **PostGIS/Earthdistance** (Lokasyon hesaplamaları için)
+* **Sunucu & Dağıtım:** AWS EC2, Docker & Docker Compose
+* **Güvenlik & Ağ:** Cloudflare (WAF, Geo-blocking, SSL/TLS Proxy), JWT, Bcrypt
+* **CI/CD Otomasyonu:** GitHub Actions (Sürekli Dağıtım)
+* **Harici Servisler:** Resend API (Mail/OTP), Expo Push Notifications (Mobil Bildirim)
+
+---
+
+## ✨ Öne Çıkan Özellikler (Core Features)
+
+* 📍 **Lokasyon Bazlı Akıllı Eşleştirme (Radius Search):** Yeni bir acil kan talebi oluşturulduğunda, PostgreSQL `earthdistance` eklentisi kullanılarak hastanın koordinatlarına en yakın (aciliyet durumuna göre 20km - 500km çapındaki) aktif bağışçılar milisaniyeler içinde tespit edilir.
+* 🚀 **Gerçek Zamanlı Push Bildirimleri:** Eşleşen bağışçılara, arka planda çalışan (goroutine) asenkron işlemler sayesinde anında **Expo Push Notification** fırlatılır.
+* 🔐 **Güvenlik ve Doğrulama:** 
+  * Kullanıcı kayıtlarında **Resend API** üzerinden OTP Mail doğrulaması yapılır.
+  * Tüm sistem **JWT (JSON Web Token)** tabanlı yetkilendirme ile korunur.
+  * API trafiği **Cloudflare WAF** arkasında gizlenerek yurtdışı bot taramalarına (Geo-blocking) ve DDoS saldırılarına karşı korunur.
+* 🤖 **Tam Otomatik CI/CD Pipeline:** Geliştirici `main` dalına kod pushladığı anda, **GitHub Actions** devreye girerek AWS EC2 sunucusuna SSH ile bağlanır, güncel kodları çeker ve Docker konteynerlerini kesintisiz (Zero-Downtime hedefli) şekilde yeniden başlatır.
+
+---
 
 ## 🛠️ Kurulum ve Çalıştırma
 
-Projeyi yerel ortamınızda çalıştırmak için bilgisayarınızda **Docker** ve **Docker Compose** kurulu olmalıdır.
+Proje, tüm bağımlılıkları ile birlikte **Docker** içerisinde çalışacak şekilde yapılandırılmıştır.
 
 1. **Projeyi Klonlayın:**
    ```bash
-   git clone [https://github.com/KULLANICI_ADIN/KanUygulamasi-Backend.git](https://github.com/KULLANICI_ADIN/KanUygulamasi-Backend.git)
+   git clone https://github.com/EnesPala0/KanUygulamasi-Backend.git
    cd KanUygulamasi-Backend
+   ```
 
-2. **Sistemi Ayağa Kaldırın:**
-    PostgreSQL veritabanını ve gerekli tüm altyapıyı Docker üzerinden başlatmak için:
-    ```bash
-    docker-compose up -d
+2. **Çevre Değişkenlerini (Env) Ayarlayın:**
+   Kök dizinde bir `.env` dosyası oluşturup gerekli API key'leri ekleyin (Resend API vb.)
 
-    Uygulamayı Çalıştırın:
-    ```bash
-    go run .   
+3. **Sistemi Docker ile Ayağa Kaldırın:**
+   PostgreSQL veritabanı ve Go API sunucusu tek bir komutla ayağa kalkar:
+   ```bash
+   docker-compose up --build -d
+   ```
+   *(API varsayılan olarak `8080` veya `80` portunda çalışacaktır).*
 
-HTTP Metodu,Endpoint,Açıklama,Yetki Gereksinimi
-POST,/api/users,Yeni kullanıcı kaydı oluşturur,Herkese Açık
-POST,/api/login,Giriş yapar ve JWT Token döndürür,Herkese Açık
-GET,/api/blood-requests,Tüm kan ilanlarını listeler,Herkese Açık
-GET,/api/blood-requests/:id,Tek bir ilanın detaylarını getirir,Herkese Açık
-POST,/api/blood-requests,Yeni bir kan ilanı oluşturur,🔒 Bearer Token
-PUT,/api/blood-requests/:id,Mevcut ilanı günceller,🔒 Bearer Token
-DELETE,/api/blood-requests/:id,İlanı sistemden siler,🔒 Bearer Token
+---
 
-Geliştirici: Enes Pala
+## 🔌 API Endpoint'leri
+
+| HTTP Metodu | Endpoint | Açıklama | Yetki |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/users` | Yeni kullanıcı kaydı ve OTP Mail gönderimi | Herkese Açık |
+| `POST` | `/api/login` | Giriş yapar ve JWT Token döndürür | Herkese Açık |
+| `GET` | `/api/blood-requests` | Filtrelenebilir tüm aktif kan ilanlarını getirir | Herkese Açık |
+| `POST` | `/api/blood-requests` | **(Asenkron Bildirimli)** Yeni kan ilanı açar | 🔒 JWT Gerekli |
+| `PUT` | `/api/blood-requests/:id` | Mevcut ilanı günceller | 🔒 JWT Gerekli |
+| `DELETE` | `/api/blood-requests/:id` | İlanı sistemden siler (Soft Delete) | 🔒 JWT Gerekli |
+| `POST` | `/api/blood-requests/:id/complete`| İlanı başarıyla tamamlar ve bağışçılara puan ekler | 🔒 JWT Gerekli |
+
+---
+**Geliştirici:** Enes Pala
