@@ -63,10 +63,29 @@ Proje, tüm bağımlılıkları ile birlikte **Docker** içerisinde çalışacak
 | `POST` | `/api/users` | Yeni kullanıcı kaydı ve OTP Mail gönderimi | Herkese Açık |
 | `POST` | `/api/login` | Giriş yapar ve JWT Token döndürür | Herkese Açık |
 | `GET` | `/api/blood-requests` | Filtrelenebilir tüm aktif kan ilanlarını getirir | Herkese Açık |
+| `GET` | `/api/blood-requests/:id` | Tek bir ilanın detayını getirir | Herkese Açık |
+| `GET` | `/api/users/:id` | Belirli bir kullanıcının (bağışçının) profilini getirir | Herkese Açık |
+| `POST` | `/api/users/verify` | OTP kodu doğrulama işlemini yapar | Herkese Açık |
+| `POST` | `/api/users/forgot-password` | Şifremi unuttum mailini (OTP) gönderir | Herkese Açık |
+| `POST` | `/api/users/reset-password` | Yeni şifre belirleme işlemini yapar | Herkese Açık |
 | `POST` | `/api/blood-requests` | **(Asenkron Bildirimli)** Yeni kan ilanı açar | 🔒 JWT Gerekli |
 | `PUT` | `/api/blood-requests/:id` | Mevcut ilanı günceller | 🔒 JWT Gerekli |
 | `DELETE` | `/api/blood-requests/:id` | İlanı sistemden siler (Soft Delete) | 🔒 JWT Gerekli |
-| `POST` | `/api/blood-requests/:id/complete`| İlanı başarıyla tamamlar ve bağışçılara puan ekler | 🔒 JWT Gerekli |
+| `PUT` | `/api/blood-requests/:id/complete`| İlanı başarıyla tamamlar ve bağışçılara puan ekler | 🔒 JWT Gerekli |
+| `POST` | `/api/volunteers` | İlana gönüllü (bağışçı) başvurusu yapar | 🔒 JWT Gerekli |
+| `DELETE` | `/api/volunteers/:id` | Gönüllü başvurusunu iptal eder | 🔒 JWT Gerekli |
+| `GET` | `/api/blood-requests/:id/volunteers` | İlana başvuran gönüllüleri listeler (Sadece İlan Sahibi) | 🔒 JWT Gerekli |
+| `PUT` | `/api/volunteers/:id/accept` | Gönüllü başvurusunu onaylar | 🔒 JWT Gerekli |
+| `PUT` | `/api/volunteers/:id/reject` | Gönüllü başvurusunu reddeder | 🔒 JWT Gerekli |
+| `GET` | `/api/my-blood-requests` | Kullanıcının kendi açtığı ilanları getirir | 🔒 JWT Gerekli |
+| `GET` | `/api/my-applications` | Kullanıcının yaptığı bağış başvurularını getirir | 🔒 JWT Gerekli |
+| `GET` | `/api/notifications` | Kullanıcıya gelen anlık bildirimleri listeler | 🔒 JWT Gerekli |
+| `PUT` | `/api/notifications/:id/read` | İlgili bildirimi 'Okundu' olarak işaretler | 🔒 JWT Gerekli |
+| `GET` | `/api/me` | Kullanıcının kendi profil bilgilerini getirir | 🔒 JWT Gerekli |
+| `PUT` | `/api/users/:id` | Kullanıcının profil bilgilerini günceller | 🔒 JWT Gerekli |
+| `PUT` | `/api/user/location` | Kullanıcının anlık koordinatlarını (Enlem/Boylam) günceller | 🔒 JWT Gerekli |
+| `PUT` | `/api/users/change-password` | Giriş yapmış kullanıcının şifresini değiştirir | 🔒 JWT Gerekli |
+| `DELETE` | `/api/me` | Kullanıcının kendi hesabını siler | 🔒 JWT Gerekli |
 
 ---
 **Geliştirici:** Enes Pala
