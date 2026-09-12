@@ -5,6 +5,7 @@ import (
 	"kan-uygulamasi/middlewares"
 	"time"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -22,6 +23,11 @@ func SetupRoutes(router *gin.Engine) {
 
 	// Tüm API uçları için (Giriş, Kayıt, Listeleme dahil) DoS koruması
 	api.Use(middlewares.RateLimitMiddleware())
+
+	// Tüm API uçları için (Giriş, Kayıt, Listeleme dahil) Sentry Hata Takibi
+	api.Use(sentrygin.New(sentrygin.Options{
+		Repanic: true, // Hatanın Gin loglarına da düşmesi için
+	}))
 
 	{
 		// --- HERKESE AÇIK ROTALAR (Token gerektirmez) ---

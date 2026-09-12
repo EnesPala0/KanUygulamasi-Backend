@@ -6,12 +6,33 @@ import (
 	"kan-uygulamasi/routes"
 	"kan-uygulamasi/services"
 	"log"
+	"os"
+	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	fmt.Println("Kan Uygulaması — starter")
+
+	// Sentry initialization
+	sentryDsn := os.Getenv("SENTRY_DSN")
+	if sentryDsn != "" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:              sentryDsn,
+			EnableTracing:    true,
+			TracesSampleRate: 1.0,
+		})
+		if err != nil {
+			log.Fatalf("sentry.Init: %s", err)
+		}
+		// Sentry tamponunu program kapanırken temizlemek için
+		defer sentry.Flush(2 * time.Second)
+		log.Println("Sentry başarıyla başlatıldı.")
+	} else {
+		log.Println("UYARI: SENTRY_DSN bulunamadı, hata takibi devre dışı.")
+	}
 
 	//1. burada veritabanı bağlantısını başlatıyoruz
 	database.ConnectDB()
